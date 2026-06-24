@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 
 import { ThemeColorProvider } from "@/components/context/theme-color-provider";
+import { QueryProvider } from "@/components/context/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -10,7 +11,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-});
+  });
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -60,12 +61,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
-        <ThemeColorProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster />
-          </TooltipProvider>
-        </ThemeColorProvider>
+        <QueryProvider>
+          <ThemeColorProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </ThemeColorProvider>
+        </QueryProvider>
       </body>
     </html>
   );

@@ -5,3 +5,47 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Enums
+enum Role {
+  USER
+  ADMIN
+}
+
+enum TokenType {
+  REFRESH
+  PASSWORD_RESET
+}
+
+// Models
+model User {
+  id              String    @id @default(uuid())
+  name            String?
+  email           String    @unique
+  password        String?
+  role            Role      @default(USER)
+
+  // Tokens
+  tokens Token[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_users")
+}
+
+model Token {
+  id         String    @id @default(uuid())
+  type       TokenType
+  token      String    @unique
+  expiresAt  DateTime  @map("expires_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  consumedAt DateTime? @map("consumed_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("tbl_tokens")
+}

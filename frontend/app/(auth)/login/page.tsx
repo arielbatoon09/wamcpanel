@@ -1,11 +1,18 @@
 import { LoginForm } from "@/components/features/auth/login-form";
+import { getOnboardingStatus } from "@/lib/auth-status";
+import { redirect } from "next/navigation";
 
 export const metadata = {
   title: "Sign In — WAMCPanel",
   description: "Sign in to your WAMCPanel account.",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const { onboarded } = await getOnboardingStatus();
+  if (!onboarded) {
+    redirect("/onboarding");
+  }
+
   return (
     <>
       {/* Page header */}

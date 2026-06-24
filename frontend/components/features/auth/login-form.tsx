@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import * as z from "zod";
@@ -9,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
+import { toast } from "sonner";
+
+import { useLogin } from "@/services/auth-service";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
@@ -17,7 +19,7 @@ const loginSchema = z.object({
 
 export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const loginMutation = useLogin();
 
   const form = useForm({
     defaultValues: {
@@ -28,12 +30,19 @@ export function LoginForm() {
       onSubmit: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsLoading(true);
-      await new Promise((r) => setTimeout(r, 1500));
-      setIsLoading(false);
-      // Actual sign in logic would go here
+      loginMutation.mutate(value, {
+        onSuccess: () => {
+          toast.success('Successfully logged in!');
+          window.location.href = '/servers';
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || err.message || 'Login failed. Please try again.');
+        }
+      });
     },
   });
+
+  const isLoading = loginMutation.isPending;
 
   return (
     <form

@@ -1,18 +1,49 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/common/logo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LogOut, User, CreditCard, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker";
+import { useMe, useOnboardingStatus, useLogout } from "@/services/auth-service";
+import { toast } from "sonner";
+import { useEffect } from "react";
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const { data: meData, isLoading: meLoading, error: meError } = useMe();
+  const { data: onboardingData, isLoading: onboardingLoading } = useOnboardingStatus();
+  const logoutMutation = useLogout();
 
   const isServerDetail = pathname.startsWith("/server/");
+
+  useEffect(() => {
+    if (!onboardingLoading && onboardingData && !onboardingData.onboarded) {
+      router.push("/onboarding");
+    }
+  }, [onboardingData, onboardingLoading, router]);
+
+  useEffect(() => {
+    if (!meLoading && meError) {
+      router.push("/login");
+    }
+  }, [meError, meLoading, router]);
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("Successfully logged out");
+        router.push("/login");
+      },
+      onError: (err: any) => {
+        toast.error("Logout failed. Please try again.");
+      }
+    });
+  };
 
   const navItems = [
     {
@@ -35,6 +66,33 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       disabled: true,
     },
   ];
+
+  if (meLoading || onboardingLoading || (onboardingData && !onboardingData.onboarded) || meError) {
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 overflow-hidden">
+        {/* Background radial glow */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="h-[400px] w-[400px] rounded-full opacity-[0.05]" style={{ background: "radial-gradient(circle, var(--primary) 0%, transparent 70%)" }} />
+        </div>
+        
+        {/* Premium loader */}
+        <div className="relative z-10 flex flex-col items-center gap-4 select-none">
+          <Logo textSize="xl" className="animate-pulse" />
+          <div className="mt-2 flex items-center gap-2 text-xs font-mono tracking-wider text-muted-foreground/60 uppercase">
+            <svg className="h-4 w-4 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Securing Workspace…
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const initials = meData?.user?.name
+    ? meData.user.name.split(" ").map(n => n[0]).join("").substring(0, 2)
+    : meData?.user?.email?.substring(0, 2);
 
   return (
     <div className={cn("flex flex-col bg-background text-foreground transition-colors duration-150", isServerDetail ? "min-h-screen lg:h-screen lg:overflow-hidden" : "min-h-screen")}>
@@ -86,10 +144,12 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex cursor-pointer items-center gap-2 outline-hidden select-none focus:ring-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/20 font-mono text-xs font-bold text-primary uppercase">AD</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/20 font-mono text-xs font-bold text-primary uppercase">
+                    {initials}
+                  </div>
                   <div className="hidden text-left md:block">
-                    <p className="text-[11px] leading-none font-bold text-foreground">Admin User</p>
-                    <p className="mt-1 text-[9px] leading-none text-muted-foreground">administrator</p>
+                    <p className="text-[11px] leading-none font-bold text-foreground">{meData?.user?.name || "User"}</p>
+                    <p className="mt-1 text-[9px] leading-none text-muted-foreground">{meData?.user?.role?.toLowerCase()}</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -106,7 +166,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                   <LifeBuoy className="h-3.5 w-3.5" /> Support Tickets
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive">
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                >
                   <LogOut className="h-3.5 w-3.5" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon } from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface PasswordRule {
   label: string;
@@ -22,6 +23,8 @@ const PASSWORD_RULES: PasswordRule[] = [
   { label: "One lowercase letter", test: (pw) => /[a-z]/.test(pw) },
   { label: "One number", test: (pw) => /[0-9]/.test(pw) },
 ];
+
+import { useSignup, useLogin } from "@/services/auth-service";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
@@ -39,8 +42,9 @@ const signupSchema = z.object({
 
 export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [focused, setFocused] = useState(false);
+  const signupMutation = useSignup();
+  const loginMutation = useLogin();
 
   const form = useForm({
     defaultValues: {
@@ -52,12 +56,31 @@ export function SignupForm() {
       onSubmit: signupSchema,
     },
     onSubmit: async ({ value }) => {
-      setIsLoading(true);
-      await new Promise((r) => setTimeout(r, 1500));
-      setIsLoading(false);
-      // Onboarding / sign up completion logic
+      signupMutation.mutate(value, {
+        onSuccess: () => {
+          toast.success('Admin account created successfully! Signing you in...');
+          
+          // Auto login after signup
+          loginMutation.mutate({
+            email: value.email,
+            password: value.password,
+          }, {
+            onSuccess: () => {
+              window.location.href = '/servers';
+            },
+            onError: () => {
+              window.location.href = '/login';
+            }
+          });
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || err.message || 'An error occurred during onboarding.');
+        }
+      });
     },
   });
+
+  const isLoading = signupMutation.isPending || loginMutation.isPending;
 
   return (
     <form

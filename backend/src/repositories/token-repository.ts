@@ -1,0 +1,53 @@
+import { injectable, inject } from "tsyringe";
+import { PrismaClient, Token, TokenType } from "@prisma/client";
+
+@injectable()
+export class TokenRepository {
+  constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
+
+  async createRefreshToken(params: { userId: string; token: string; expiresAt: Date }) {
+    const { userId, token, expiresAt } = params;
+    return this.db.token.create({
+      data: {
+        userId,
+        token,
+        expiresAt,
+        type: TokenType.REFRESH,
+      },
+    });
+  }
+
+  async findActiveRefreshToken(token: string): Promise<Token | null> {
+    return this.db.token.findFirst({
+      where: {
+        token,
+        type: TokenType.REFRESH,
+        consumedAt: null,
+        revokedAt: null,
+      },
+    });
+  }
+
+  async consumeToken(id: string) {
+    return this.db.token.update({
+      where: { id },
+      data: { consumedAt: new Date() },
+    });
+  }
+
+  async revokeToken(id: string) {
+    return this.db.token.update({
+      where: { id },
+      data: { revokedAt: new Date() },
+    });
+  }
+
+  async cleanupInvalidTokensByUser(userId: string) {
+    return this.db.token.deleteMany({
+      where: {
+        userId,
+        OR: [{ expiresAt: { lt: new Date() } }, { revokedAt: { not: null } }, { consumedAt: { not: null } }],
+      },
+    });
+  }
+}
