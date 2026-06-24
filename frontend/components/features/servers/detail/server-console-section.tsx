@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useServerStore } from "@/hooks/useServerStore"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Terminal, Send, Trash2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Terminal, Send, Trash2, Search, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface ServerConsoleSectionProps {
   id: string
@@ -13,17 +15,29 @@ interface ServerConsoleSectionProps {
 }
 
 export function ServerConsoleSection({ id, className }: ServerConsoleSectionProps) {
-  const { logs, addLog, clearLogs, servers, stopServer, startServer, restartServer } = useServerStore()
+  const { logs, addLog, clearLogs, servers, stopServer } = useServerStore()
   const [command, setCommand] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
   const terminalEndRef = useRef<HTMLDivElement>(null)
 
   const server = servers.find((s) => s.id === id)
   const serverLogs = logs[id] || []
 
-  // Auto-scroll terminal to bottom when new logs arrive
+  // Filtered logs — memoised, only recomputes when logs or query change
+  const filteredLogs = useMemo(() => {
+    if (!searchQuery.trim()) return serverLogs
+    const q = searchQuery.toLowerCase()
+    return serverLogs.filter((log) => log.toLowerCase().includes(q))
+  }, [serverLogs, searchQuery])
+
+  const isFiltering = searchQuery.trim().length > 0
+
+  // Auto-scroll only when NOT actively filtering
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [serverLogs])
+    if (!isFiltering) {
+      terminalEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+  }, [serverLogs, isFiltering])
 
   const handleSendCommand = (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,11 +50,10 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
     if (!server) return
 
     if (server.status !== "online") {
-      addLog(id, `[SYSTEM] Command ignored. Server is not online.`);
+      addLog(id, `[SYSTEM] Command ignored. Server is not online.`)
       return
     }
 
-    // Command parser simulation
     setTimeout(() => {
       const lowerCmd = cmd.toLowerCase()
       if (lowerCmd === "help") {
@@ -52,14 +65,11 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
         addLog(id, ` - stop : Safely stop the minecraft server.`)
         addLog(id, ` - gc : Trigger Java garbage collection.`)
       } else if (lowerCmd.startsWith("say ")) {
-        const msg = cmd.substring(4)
-        addLog(id, `[Broadcast] ${msg}`)
+        addLog(id, `[Broadcast] ${cmd.substring(4)}`)
       } else if (lowerCmd.startsWith("op ")) {
-        const player = cmd.substring(3)
-        addLog(id, `[CONSOLE] Made ${player} a server operator`)
+        addLog(id, `[CONSOLE] Made ${cmd.substring(3)} a server operator`)
       } else if (lowerCmd.startsWith("deop ")) {
-        const player = cmd.substring(5)
-        addLog(id, `[CONSOLE] Removed operator status from ${player}`)
+        addLog(id, `[CONSOLE] Removed operator status from ${cmd.substring(5)}`)
       } else if (lowerCmd === "list") {
         addLog(id, `[CONSOLE] Currently online: 14/50 players. Active: player_one, builder2, redstone_pro.`)
       } else if (lowerCmd === "stop") {
@@ -74,6 +84,31 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
     }, 400)
   }
 
+  const getLogColor = (log: string) => {
+    if (log.includes("[SYSTEM]")) return "text-amber-400 font-semibold"
+    if (log.startsWith("> ")) return "text-cyan-400 font-bold"
+    if (log.includes("ONLINE") || log.includes("Done")) return "text-emerald-400 font-semibold"
+    if (log.includes("OFFLINE") || log.includes("stopping") || log.includes("KILL")) return "text-rose-500 font-semibold"
+    if (log.includes("[Broadcast]")) return "text-violet-400 font-semibold"
+    if (log.includes("[CONSOLE]")) return "text-sky-400"
+    return "text-zinc-300"
+  }
+
+  const highlightMatch = (text: string, query: string) => {
+    if (!query.trim()) return <span>{text}</span>
+    const idx = text.toLowerCase().indexOf(query.toLowerCase())
+    if (idx === -1) return <span>{text}</span>
+    return (
+      <>
+        <span>{text.slice(0, idx)}</span>
+        <mark className="bg-primary/30 text-primary rounded-sm px-0.5">
+          {text.slice(idx, idx + query.length)}
+        </mark>
+        <span>{text.slice(idx + query.length)}</span>
+      </>
+    )
+  }
+
   return (
     <Card className={`border border-border backdrop-blur-sm bg-card/65 flex flex-col h-full overflow-hidden ${className || ""}`}>
       {/* Header */}
@@ -81,6 +116,9 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
         <div className="flex items-center gap-2">
           <Terminal className="h-4 w-4 text-primary" />
           <span className="text-xs font-bold font-mono tracking-wider uppercase">Live Terminal Console</span>
+          <Badge variant="outline" className="text-[9px] font-mono px-1.5 py-0 h-4 text-muted-foreground">
+            {serverLogs.length} lines
+          </Badge>
         </div>
         <Button
           variant="outline"
@@ -93,29 +131,55 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
         </Button>
       </div>
 
+      {/* Search / Filter Bar */}
+      <div className="px-3 py-2 border-b border-border/50 bg-black/40 flex items-center gap-2">
+        <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        <Input
+          id="console-search"
+          placeholder="Filter logs…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-7 text-xs font-mono bg-transparent border-0 shadow-none focus-visible:ring-0 px-0 placeholder:text-muted-foreground/50 flex-1"
+        />
+        {isFiltering && (
+          <>
+            <Badge variant="secondary" className="text-[9px] font-mono px-1.5 py-0 h-4 shrink-0">
+              {filteredLogs.length} / {serverLogs.length}
+            </Badge>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Clear filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Logs View */}
       <div className="flex-1 bg-black/95 p-4 overflow-y-auto font-mono text-xs text-zinc-300 space-y-1.5 selection:bg-primary/30 selection:text-white">
-        {serverLogs.map((log, index) => {
-          // Color code logs based on level
-          let color = "text-zinc-300"
-          if (log.includes("[SYSTEM]")) color = "text-amber-400 font-semibold"
-          if (log.includes("> ")) color = "text-cyan-400 font-bold"
-          if (log.includes("ONLINE") || log.includes("Done")) color = "text-emerald-400 font-semibold"
-          if (log.includes("OFFLINE") || log.includes("stopping") || log.includes("KILL")) color = "text-rose-500 font-semibold"
-
-          return (
-            <div key={index} className={`${color} leading-relaxed break-all`}>
-              {log}
+        {filteredLogs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 gap-2 select-none">
+            <Search className="h-8 w-8" />
+            <span className="text-xs">
+              {isFiltering ? `No logs matching "${searchQuery}"` : "No console output yet."}
+            </span>
+          </div>
+        ) : (
+          filteredLogs.map((log, index) => (
+            <div key={index} className={cn(getLogColor(log), "leading-relaxed break-all")}>
+              {isFiltering ? highlightMatch(log, searchQuery) : log}
             </div>
-          )
-        })}
-        <div ref={terminalEndRef} />
+          ))
+        )}
+        {!isFiltering && <div ref={terminalEndRef} />}
       </div>
 
       {/* Command Input Box */}
       <form onSubmit={handleSendCommand} className="p-3 border-t border-border/80 bg-secondary/35 flex gap-2">
         <Input
-          placeholder={server?.status === "online" ? "Type server command (e.g. 'help')..." : "Server is offline. Command execution disabled."}
+          placeholder={server?.status === "online" ? "Type server command (e.g. 'help')…" : "Server is offline. Command execution disabled."}
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           disabled={server?.status !== "online"}

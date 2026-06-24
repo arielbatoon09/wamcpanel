@@ -11,6 +11,7 @@ export const serverCreateSchema = z.object({
   ramLimit: z.coerce.number().int().min(1024, "RAM limit must be at least 1024MB (1GB)").max(65536, "RAM limit must be <= 64GB (65536MB)"),
   cpuLimit: z.coerce.number().int().min(100, "CPU limit must be at least 100% (1 Core)").max(800, "CPU limit must be <= 800% (8 Cores)"),
   host: z.string().min(3, "Host is required").default("localhost"),
+  javaVersion: z.enum(["17", "21", "25"]).default("21"),
 });
 
 export type ServerCreateInput = z.infer<typeof serverCreateSchema>;

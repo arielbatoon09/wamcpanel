@@ -1,12 +1,12 @@
-import { ServerDetailsManager } from "@/components/features/servers/detail/server-details-manager"
+import { ServerOverviewTab } from "@/components/features/servers/detail/server-overview-tab"
 
 interface ServerPageProps {
   params: Promise<{ id: string }>
 }
 
 export const metadata = {
-  title: "Minecraft Server Panel - Console",
-  description: "Live console logs and resource usage metrics for Minecraft server.",
+  title: "Minecraft Server Panel - Overview",
+  description: "Resource usage statistics and overview metrics for Minecraft server.",
 }
 
 export default async function ServerPage({ params }: ServerPageProps) {
@@ -14,7 +14,7 @@ export default async function ServerPage({ params }: ServerPageProps) {
 
   return (
     <div className="w-full h-full">
-      <ServerDetailsManager id={id} />
+      <ServerOverviewTab id={id} />
     </div>
   )
 }

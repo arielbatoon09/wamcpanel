@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 
 import { ThemeProvider } from "@/components/context/theme-provider";
+import { ThemeColorProvider } from "@/components/context/theme-color-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -17,10 +18,12 @@ export default function RootLayout({ children, }: Readonly<{ children: React.Rea
     <html lang="en" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}>
       <body>
         <ThemeProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster />
-          </TooltipProvider>
+          <ThemeColorProvider>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </ThemeColorProvider>
         </ThemeProvider>
       </body>
     </html>

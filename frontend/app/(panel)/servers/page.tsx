@@ -1,3 +1,4 @@
+import { DashboardStats } from "@/components/features/dashboard/dashboard-stats"
 import { ServerListSection } from "@/components/features/dashboard/server-list-section"
 
 export const metadata = {
@@ -10,11 +11,16 @@ export default function ServersPage() {
     <div className="space-y-6">
       {/* Page Title Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Servers</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">Server Overview</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage and monitor all your deployed Minecraft servers in real-time.
+          Monitor host node allocations, resource utilization, and toggle server states.
         </p>
       </div>
+
+      {/* Stats Summary Section */}
+      <section aria-label="Global Stats">
+        <DashboardStats />
+      </section>
 
       {/* Servers List Section */}
       <section aria-label="Servers List">

@@ -182,7 +182,7 @@ export function ServerCard({ server }: ServerCardProps) {
               size="sm"
               onClick={(e) => {
                 e.stopPropagation()
-                router.push(`/server/${server.id}`)
+                router.push(`/server/${server.id}/console`)
               }}
               className="h-8 text-xs font-semibold cursor-pointer"
             >

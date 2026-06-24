@@ -18,6 +18,7 @@ export interface ServerAPIResponse {
   };
   createdAt: string;
   updatedAt: string;
+  javaVersion?: '17' | '21' | '25';
 }
 
 export const INITIAL_SERVERS: ServerAPIResponse[] = [

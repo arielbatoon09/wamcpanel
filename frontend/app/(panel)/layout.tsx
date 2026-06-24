@@ -21,6 +21,7 @@ import {
   LifeBuoy
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker"
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -110,6 +111,11 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               System Status: <span className="text-emerald-500 font-bold">Online</span>
             </span>
             
+            <div className="h-4 w-[1px] bg-border hidden sm:block" />
+
+            {/* Theme color picker */}
+            <ThemeColorPicker />
+
             <div className="h-4 w-[1px] bg-border hidden sm:block" />
 
             {/* Profile Dropdown */}

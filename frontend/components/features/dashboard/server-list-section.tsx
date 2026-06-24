@@ -44,6 +44,7 @@ export function ServerListSection() {
   const [ramLimit, setRamLimit] = useState("4096")
   const [cpuLimit, setCpuLimit] = useState("200")
   const [host, setHost] = useState("localhost")
+  const [javaVersion, setJavaVersion] = useState<"17" | "21" | "25">("21")
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   // Filtering logic
@@ -69,6 +70,7 @@ export function ServerListSection() {
       ramLimit,
       cpuLimit,
       host,
+      javaVersion,
     }
 
     try {
@@ -86,6 +88,7 @@ export function ServerListSection() {
         maxPlayers: validated.software === "Velocity" ? 500 : 50,
         ramLimit: validated.ramLimit,
         cpuLimit: validated.cpuLimit,
+        javaVersion: validated.javaVersion,
       })
 
       // Reset Form and close modal
@@ -96,6 +99,7 @@ export function ServerListSection() {
       setPort("25565")
       setRamLimit("4096")
       setCpuLimit("200")
+      setJavaVersion("21")
       setOpen(false)
     } catch (err) {
       if (err instanceof ZodError) {
@@ -267,6 +271,20 @@ export function ServerListSection() {
                     {formErrors.cpuLimit && (
                       <p className="text-[10px] text-rose-500 font-medium">{formErrors.cpuLimit}</p>
                     )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">Java Version</label>
+                    <Select value={javaVersion} onValueChange={(val: any) => setJavaVersion(val)}>
+                      <SelectTrigger className="cursor-pointer">
+                        <SelectValue placeholder="Java Version" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="17" className="cursor-pointer">Java 17</SelectItem>
+                        <SelectItem value="21" className="cursor-pointer">Java 21</SelectItem>
+                        <SelectItem value="25" className="cursor-pointer">Java 25</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
