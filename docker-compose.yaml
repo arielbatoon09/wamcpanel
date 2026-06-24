@@ -1,0 +1,106 @@
+name: wamcpanel
+
+services:
+  # Relational Database (PostgreSQL)
+  pg:
+    image: postgres:17-alpine
+    restart: always
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-wamc_db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # Backend Web Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '${BACKEND_PORT:-8000}:8000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - STAGE=${STAGE:-dev}
+      - PORT=8000
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-some_jwt_secret_key_here}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
+    depends_on:
+      pg:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+  # Frontend Web Service (Next.js)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
+      - NEXT_INTERNAL_BACKEND_URL=${NEXT_INTERNAL_BACKEND_URL:-http://backend:8000}
+    depends_on:
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+        reservations:
+          memory: 256M
+
+volumes:
+  pg-data:
+    name: wamcpanel-pg-data
+  redis-data:
+    name: wamcpanel-redis-data

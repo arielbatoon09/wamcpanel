@@ -40,5 +40,39 @@
 .env
 
 # BACKEND
-/backend/node_modules
+# Dependency directories
+/backend/node_modules/
+/backend/jspm_packages/
+
+# Build outputs
+/backend/dist/
+/backend/build/
+/backend/out/
+
+# Environment variables
 /backend/.env
+/backend/.env.local
+/backend/.env.development.local
+/backend/.env.test.local
+/backend/.env.production.local
+/backend/*.env
+
+# Generated Prisma Client (Crucial)
+/backend/src/generated/
+/backend/generated/
+/backend/prisma/*.db
+/backend/prisma/*.db-journal
+
+# Logs
+/backend/logs
+/backend/*.log
+/backend/npm-debug.log*
+/backend/yarn-debug.log*
+/backend/yarn-error.log*
+/backend/pnpm-debug.log*
+
+# Temporary files
+/backend/tmp/
+/backend/coverage/
+/backend/.tsbuildinfo
+/backend/.npm

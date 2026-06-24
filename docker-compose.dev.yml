@@ -1,0 +1,38 @@
+services:
+  # Backend Development Setup
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    # Use watch mode configured in package.json
+    command: npm run dev
+    ports:
+      - '${BACKEND_PORT:-8000}:8000'
+    volumes:
+      - ./backend:/builder
+      - /builder/node_modules
+    environment:
+      - NODE_ENV=development
+      - STAGE=dev
+      - PORT=8000
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public
+      - REDIS_URL=redis://redis:6379
+
+  # Frontend Development Setup
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    command: npm run dev
+    ports:
+      - '${FRONTEND_PORT:-3000}:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:${BACKEND_PORT:-8000}
+      - NEXT_INTERNAL_BACKEND_URL=http://backend:8000
