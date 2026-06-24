@@ -2,7 +2,6 @@ import "@/styles/globals.css";
 import { Geist_Mono, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 
-import { ThemeProvider } from "@/components/context/theme-provider";
 import { ThemeColorProvider } from "@/components/context/theme-color-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
@@ -61,14 +60,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
-        <ThemeProvider>
-          <ThemeColorProvider>
-            <TooltipProvider>
-              {children}
-              <Toaster />
-            </TooltipProvider>
-          </ThemeColorProvider>
-        </ThemeProvider>
+        <ThemeColorProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster />
+          </TooltipProvider>
+        </ThemeColorProvider>
       </body>
     </html>
   );

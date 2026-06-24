@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useServerStore } from "@/hooks/useServerStore";
 import { Button } from "@/components/ui/button";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Logo } from "@/components/common/logo";
 import Link from "next/link";
 import { Terminal, Activity, FolderOpen, ToyBrick, Database, Settings2, ArrowLeft, Play, Square, RotateCw, Skull, Menu, Cpu, HardDrive, Users, ClipboardList } from "lucide-react";
 
@@ -194,9 +196,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
       {/* Mobile Top Header & Navigation Toggle */}
       <div className="flex w-full shrink-0 items-center justify-between border-b border-border bg-card p-3.5 backdrop-blur-md lg:hidden">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/servers" className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-primary">
-            <span className="font-mono text-xs font-black text-primary-foreground">W</span>
-          </Link>
+          <Logo href="/servers" textSize="sm" className="gap-2" />
           <div className="min-w-0">
             <h1 className="max-w-[130px] truncate text-xs leading-tight font-extrabold text-foreground">{server.name}</h1>
             <p className="mt-0.5 font-mono text-[10px] leading-none text-muted-foreground">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Tab</p>

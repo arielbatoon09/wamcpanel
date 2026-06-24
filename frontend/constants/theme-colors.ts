@@ -126,4 +126,4 @@ export const THEME_COLORS: ThemeColor[] = [
   },
 ];
 
-export const DEFAULT_THEME_COLOR = THEME_COLORS[0];
+export const DEFAULT_THEME_COLOR = THEME_COLORS.find((c) => c.name === "slate")!;

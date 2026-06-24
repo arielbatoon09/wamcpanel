@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/common/logo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { LogOut, User, CreditCard, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,12 +43,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
           {/* Logo and Nav links */}
           <div className="flex items-center gap-8">
-            <Link href="/servers" className="flex shrink-0 items-center gap-2 overflow-hidden">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
-                <span className="font-mono text-sm font-black text-primary-foreground">W</span>
-              </div>
-              <span className="font-sans text-sm font-extrabold tracking-tight whitespace-nowrap">WAMCPanel</span>
-            </Link>
+            <Logo href="/servers" textSize="sm" className="gap-2" />
 
             {/* Navigation Items */}
             <nav className="hidden items-center gap-1.5 md:flex">
