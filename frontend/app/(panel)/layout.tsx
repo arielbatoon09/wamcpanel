@@ -1,32 +1,16 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  Shield,
-  LogOut,
-  User,
-  Settings,
-  CreditCard,
-  LifeBuoy
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { LogOut, User, CreditCard, LifeBuoy } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker";
 
 export default function PanelLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
-  const isServerDetail = pathname.startsWith("/server/")
+  const isServerDetail = pathname.startsWith("/server/");
 
   const navItems = [
     {
@@ -48,43 +32,28 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       href: "/support",
       disabled: true,
     },
-  ]
-
-
-
-
+  ];
 
   return (
-    <div className={cn(
-      "flex flex-col bg-background text-foreground transition-colors duration-150",
-      isServerDetail ? "lg:h-screen lg:overflow-hidden min-h-screen" : "min-h-screen"
-    )}>
-      
+    <div className={cn("flex flex-col bg-background text-foreground transition-colors duration-150", isServerDetail ? "min-h-screen lg:h-screen lg:overflow-hidden" : "min-h-screen")}>
       {/* Top Header / Navigation Bar */}
-      <header className="h-16 flex items-center border-b border-border bg-card/65 backdrop-blur-md shrink-0 sticky top-0 z-50 select-none px-6">
-        <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-          
+      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center border-b border-border bg-card/65 px-6 backdrop-blur-md select-none">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
           {/* Logo and Nav links */}
           <div className="flex items-center gap-8">
-            <Link href="/servers" className="flex items-center gap-2 overflow-hidden shrink-0">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                <span className="font-black text-sm text-primary-foreground font-mono">W</span>
+            <Link href="/servers" className="flex shrink-0 items-center gap-2 overflow-hidden">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <span className="font-mono text-sm font-black text-primary-foreground">W</span>
               </div>
-              <span className="font-extrabold text-sm tracking-tight font-sans whitespace-nowrap">
-                WAMCPanel
-              </span>
+              <span className="font-sans text-sm font-extrabold tracking-tight whitespace-nowrap">WAMCPanel</span>
             </Link>
 
             {/* Navigation Items */}
-            <nav className="hidden md:flex items-center gap-1.5">
+            <nav className="hidden items-center gap-1.5 md:flex">
               {navItems.map((item, index) => {
-                const isActive = pathname.startsWith(item.href)
+                const isActive = pathname.startsWith(item.href);
                 return item.disabled ? (
-                  <span
-                    key={index}
-                    className="px-3 py-1.5 text-xs font-semibold text-muted-foreground/50 cursor-not-allowed select-none"
-                    title="Coming Soon"
-                  >
+                  <span key={index} className="cursor-not-allowed px-3 py-1.5 text-xs font-semibold text-muted-foreground/50 select-none" title="Coming Soon">
                     {item.label}
                   </span>
                 ) : (
@@ -92,42 +61,38 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                     key={index}
                     href={item.href}
                     className={cn(
-                      "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer",
-                      isActive
-                        ? "bg-primary/10 text-primary font-bold"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150",
+                      isActive ? "bg-primary/10 font-bold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
                     {item.label}
                   </Link>
-                )
+                );
               })}
             </nav>
           </div>
 
           {/* Action Controls & Profile Menu */}
           <div className="flex items-center gap-4">
-            <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider hidden sm:inline-block">
-              System Status: <span className="text-emerald-500 font-bold">Online</span>
+            <span className="hidden font-mono text-[10px] tracking-wider text-muted-foreground uppercase sm:inline-block">
+              System Status: <span className="font-bold text-emerald-500">Online</span>
             </span>
-            
-            <div className="h-4 w-[1px] bg-border hidden sm:block" />
+
+            <div className="hidden h-4 w-[1px] bg-border sm:block" />
 
             {/* Theme color picker */}
             <ThemeColorPicker />
 
-            <div className="h-4 w-[1px] bg-border hidden sm:block" />
+            <div className="hidden h-4 w-[1px] bg-border sm:block" />
 
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 select-none outline-hidden cursor-pointer focus:ring-0">
-                  <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary font-mono uppercase border border-primary/20">
-                    AD
-                  </div>
-                  <div className="hidden md:block text-left">
-                    <p className="text-[11px] font-bold leading-none text-foreground">Admin User</p>
-                    <p className="text-[9px] text-muted-foreground leading-none mt-1">administrator</p>
+                <button className="flex cursor-pointer items-center gap-2 outline-hidden select-none focus:ring-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/20 font-mono text-xs font-bold text-primary uppercase">AD</div>
+                  <div className="hidden text-left md:block">
+                    <p className="text-[11px] leading-none font-bold text-foreground">Admin User</p>
+                    <p className="mt-1 text-[9px] leading-none text-muted-foreground">administrator</p>
                   </div>
                 </button>
               </DropdownMenuTrigger>
@@ -150,23 +115,13 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
         </div>
       </header>
 
       {/* Main Workspace */}
-      <main className={cn(
-        "flex-1 bg-background/50 p-6",
-        isServerDetail ? "lg:h-[calc(100vh-64px)] lg:overflow-hidden overflow-y-auto" : "overflow-y-auto"
-      )}>
-        <div className={cn(
-          "max-w-7xl mx-auto",
-          isServerDetail ? "lg:h-full h-auto" : "space-y-6"
-        )}>
-          {children}
-        </div>
+      <main className={cn("flex-1 bg-background/50 p-6", isServerDetail ? "overflow-y-auto lg:h-[calc(100vh-64px)] lg:overflow-hidden" : "overflow-y-auto")}>
+        <div className={cn("mx-auto max-w-7xl", isServerDetail ? "h-auto lg:h-full" : "space-y-6")}>{children}</div>
       </main>
-
     </div>
-  )
+  );
 }

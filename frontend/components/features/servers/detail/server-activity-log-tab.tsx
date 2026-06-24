@@ -1,58 +1,34 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  ClipboardList,
-  Search,
-  X,
-  Play,
-  Square,
-  RotateCw,
-  Skull,
-  Settings2,
-  Upload,
-  Download,
-  User,
-  Shield,
-  AlertTriangle,
-  Info,
-  CheckCircle2,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useState, useMemo } from "react";
+import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ClipboardList, Search, X, Play, Settings2, Upload, Download, User, Shield, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ActivityLevel = "info" | "success" | "warning" | "error"
-type ActivityCategory = "power" | "config" | "player" | "backup" | "system" | "file"
+type ActivityLevel = "info" | "success" | "warning" | "error";
+type ActivityCategory = "power" | "config" | "player" | "backup" | "system" | "file";
 
 interface ActivityEntry {
-  id: string
-  timestamp: string
-  level: ActivityLevel
-  category: ActivityCategory
-  actor: string
-  message: string
+  id: string;
+  timestamp: string;
+  level: ActivityLevel;
+  category: ActivityCategory;
+  actor: string;
+  message: string;
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 // Single fixed reference for all time calculations in this module.
 // Using Date.now() anywhere during render causes SSR/client hydration mismatches.
-const MOCK_NOW = new Date("2026-06-24T12:00:00.000Z").getTime()
+const MOCK_NOW = new Date("2026-06-24T12:00:00.000Z").getTime();
 
-function generateMockLogs(serverId: string): ActivityEntry[] {
-  const now = MOCK_NOW
-  const min = 60_000
+function generateMockLogs(): ActivityEntry[] {
+  const now = MOCK_NOW;
+  const min = 60_000;
 
   const entries: ActivityEntry[] = [
     {
@@ -175,109 +151,102 @@ function generateMockLogs(serverId: string): ActivityEntry[] {
       actor: "admin",
       message: "spigot.yml updated — view-distance changed from 10 to 8.",
     },
-  ]
+  ];
 
-  return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+  return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const LEVEL_META: Record<ActivityLevel, { label: string; icon: React.ElementType; className: string; badgeClass: string }> = {
-  info:    { label: "Info",    icon: Info,          className: "text-sky-400",     badgeClass: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
-  success: { label: "Success", icon: CheckCircle2,  className: "text-emerald-400", badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  warning: { label: "Warning", icon: AlertTriangle, className: "text-amber-400",   badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  error:   { label: "Error",   icon: AlertTriangle, className: "text-rose-500",    badgeClass: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
-}
+  info: { label: "Info", icon: Info, className: "text-sky-400", badgeClass: "bg-sky-500/10 text-sky-400 border-sky-500/20" },
+  success: {
+    label: "Success",
+    icon: CheckCircle2,
+    className: "text-emerald-400",
+    badgeClass: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  },
+  warning: { label: "Warning", icon: AlertTriangle, className: "text-amber-400", badgeClass: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+  error: { label: "Error", icon: AlertTriangle, className: "text-rose-500", badgeClass: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
+};
 
 const CATEGORY_META: Record<ActivityCategory, { label: string; icon: React.ElementType }> = {
-  power:  { label: "Power",   icon: Play },
-  config: { label: "Config",  icon: Settings2 },
-  player: { label: "Player",  icon: User },
-  backup: { label: "Backup",  icon: Download },
-  system: { label: "System",  icon: Shield },
-  file:   { label: "File",    icon: Upload },
-}
+  power: { label: "Power", icon: Play },
+  config: { label: "Config", icon: Settings2 },
+  player: { label: "Player", icon: User },
+  backup: { label: "Backup", icon: Download },
+  system: { label: "System", icon: Shield },
+  file: { label: "File", icon: Upload },
+};
 
 function formatRelativeTime(iso: string): string {
   // Use MOCK_NOW — not Date.now() — to stay deterministic between SSR and client.
-  const diff = MOCK_NOW - new Date(iso).getTime()
-  const m = Math.floor(diff / 60_000)
-  if (m < 1) return "just now"
-  if (m < 60) return `${m}m ago`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
+  const diff = MOCK_NOW - new Date(iso).getTime();
+  const m = Math.floor(diff / 60_000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 function formatTimestamp(iso: string): string {
   // Slice UTC time directly from the ISO string — toLocaleTimeString() produces
   // different output on Node.js (server) vs browser, causing hydration mismatches.
   // ISO format: "YYYY-MM-DDTHH:MM:SS.mmmZ" → chars 11–18 = "HH:MM:SS"
-  return iso.substring(11, 19)
+  return iso.substring(11, 19);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
+export function ServerActivityLogTab() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState<"all" | ActivityLevel>("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | ActivityCategory>("all");
 
-interface ServerActivityLogTabProps {
-  id: string
-}
-
-export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [levelFilter, setLevelFilter] = useState<"all" | ActivityLevel>("all")
-  const [categoryFilter, setCategoryFilter] = useState<"all" | ActivityCategory>("all")
-
-  const allLogs = useMemo(() => generateMockLogs(id), [id])
+  const allLogs = useMemo(() => generateMockLogs(), []);
 
   const filteredLogs = useMemo(() => {
     return allLogs.filter((entry) => {
-      const matchesSearch =
-        !searchQuery.trim() ||
-        entry.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.actor.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesLevel = levelFilter === "all" || entry.level === levelFilter
-      const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter
-      return matchesSearch && matchesLevel && matchesCategory
-    })
-  }, [allLogs, searchQuery, levelFilter, categoryFilter])
+      const matchesSearch = !searchQuery.trim() || entry.message.toLowerCase().includes(searchQuery.toLowerCase()) || entry.actor.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLevel = levelFilter === "all" || entry.level === levelFilter;
+      const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter;
+      return matchesSearch && matchesLevel && matchesCategory;
+    });
+  }, [allLogs, searchQuery, levelFilter, categoryFilter]);
 
-  const isFiltering =
-    searchQuery.trim().length > 0 || levelFilter !== "all" || categoryFilter !== "all"
+  const isFiltering = searchQuery.trim().length > 0 || levelFilter !== "all" || categoryFilter !== "all";
 
   const clearFilters = () => {
-    setSearchQuery("")
-    setLevelFilter("all")
-    setCategoryFilter("all")
-  }
+    setSearchQuery("");
+    setLevelFilter("all");
+    setCategoryFilter("all");
+  };
 
   // Summary counts
   const counts = useMemo(
     () => ({
-      error:   allLogs.filter((l) => l.level === "error").length,
+      error: allLogs.filter((l) => l.level === "error").length,
       warning: allLogs.filter((l) => l.level === "warning").length,
       success: allLogs.filter((l) => l.level === "success").length,
-      info:    allLogs.filter((l) => l.level === "info").length,
+      info: allLogs.filter((l) => l.level === "info").length,
     }),
     [allLogs]
-  )
+  );
 
   return (
-    <div className="flex flex-col h-full gap-4 animate-in fade-in duration-300">
+    <div className="flex h-full animate-in flex-col gap-4 duration-300 fade-in">
       {/* Summary pills */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 shrink-0">
+      <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
         {(["error", "warning", "success", "info"] as ActivityLevel[]).map((lvl) => {
-          const meta = LEVEL_META[lvl]
-          const Icon = meta.icon
+          const meta = LEVEL_META[lvl];
+          const Icon = meta.icon;
           return (
             <button
               key={lvl}
               onClick={() => setLevelFilter(levelFilter === lvl ? "all" : lvl)}
               className={cn(
-                "flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all duration-150 text-left",
-                levelFilter === lvl
-                  ? meta.badgeClass + " border-current/30 scale-[0.98]"
-                  : "bg-card/65 border-border/80 hover:border-border"
+                "flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-150",
+                levelFilter === lvl ? meta.badgeClass + " scale-[0.98] border-current/30" : "border-border/80 bg-card/65 hover:border-border"
               )}
             >
               <Icon className={cn("h-4 w-4 shrink-0", meta.className)} />
@@ -286,30 +255,30 @@ export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
                 <p className="text-[10px] text-muted-foreground">{meta.label}</p>
               </div>
             </button>
-          )
+          );
         })}
       </div>
 
       {/* Main Log Card */}
-      <Card className="flex-1 min-h-0 border border-border/80 bg-card/65 backdrop-blur-sm flex flex-col overflow-hidden">
+      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border border-border/80 bg-card/65 backdrop-blur-sm">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-border/80 bg-secondary/20 shrink-0">
-          <ClipboardList className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-xs font-bold uppercase tracking-wider mr-auto">Activity Log</span>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/80 bg-secondary/20 px-4 py-3">
+          <ClipboardList className="h-4 w-4 shrink-0 text-primary" />
+          <span className="mr-auto text-xs font-bold tracking-wider uppercase">Activity Log</span>
 
           {/* Search */}
-          <div className="flex items-center gap-1.5 bg-background/50 border border-border/60 rounded-lg px-2.5 h-8 min-w-[180px]">
-            <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="flex h-8 min-w-[180px] items-center gap-1.5 rounded-lg border border-border/60 bg-background/50 px-2.5">
+            <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <input
               id="activity-log-search"
               type="text"
               placeholder="Search logs…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-xs font-mono outline-none flex-1 text-foreground placeholder:text-muted-foreground/50 min-w-0"
+              className="min-w-0 flex-1 bg-transparent font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="text-muted-foreground hover:text-foreground cursor-pointer">
+              <button onClick={() => setSearchQuery("")} className="cursor-pointer text-muted-foreground hover:text-foreground">
                 <X className="h-3 w-3" />
               </button>
             )}
@@ -317,7 +286,7 @@ export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
 
           {/* Level filter */}
           <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as "all" | ActivityLevel)}>
-            <SelectTrigger className="h-8 text-xs w-[110px] border-border/60">
+            <SelectTrigger className="h-8 w-[110px] border-border/60 text-xs">
               <SelectValue placeholder="Level" />
             </SelectTrigger>
             <SelectContent>
@@ -331,7 +300,7 @@ export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
 
           {/* Category filter */}
           <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as "all" | ActivityCategory)}>
-            <SelectTrigger className="h-8 text-xs w-[120px] border-border/60">
+            <SelectTrigger className="h-8 w-[120px] border-border/60 text-xs">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -346,57 +315,51 @@ export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
           </Select>
 
           {isFiltering && (
-            <button
-              onClick={clearFilters}
-              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
+            <button onClick={clearFilters} className="flex cursor-pointer items-center gap-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground">
               <X className="h-3 w-3" /> Clear
             </button>
           )}
         </div>
 
         {/* Results count */}
-        <div className="px-4 py-1.5 border-b border-border/40 bg-secondary/10 shrink-0 flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground font-mono">
-            Showing <span className="text-foreground font-bold">{filteredLogs.length}</span> of {allLogs.length} events
+        <div className="flex shrink-0 items-center justify-between border-b border-border/40 bg-secondary/10 px-4 py-1.5">
+          <span className="font-mono text-[10px] text-muted-foreground">
+            Showing <span className="font-bold text-foreground">{filteredLogs.length}</span> of {allLogs.length} events
           </span>
         </div>
 
         {/* Log entries */}
-        <div className="flex-1 overflow-y-auto divide-y divide-border/30">
+        <div className="flex-1 divide-y divide-border/30 overflow-y-auto">
           {filteredLogs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 gap-2 select-none py-16">
+            <div className="flex h-full flex-col items-center justify-center gap-2 py-16 text-muted-foreground/40 select-none">
               <ClipboardList className="h-10 w-10" />
               <p className="text-xs">No activity found matching your filters.</p>
             </div>
           ) : (
             filteredLogs.map((entry) => {
-              const levelMeta = LEVEL_META[entry.level]
-              const catMeta = CATEGORY_META[entry.category]
-              const LevelIcon = levelMeta.icon
-              const CatIcon = catMeta.icon
+              const levelMeta = LEVEL_META[entry.level];
+              const catMeta = CATEGORY_META[entry.category];
+              const LevelIcon = levelMeta.icon;
+              const CatIcon = catMeta.icon;
 
               return (
-                <div
-                  key={entry.id}
-                  className="flex items-start gap-3 px-4 py-3 hover:bg-secondary/20 transition-colors group"
-                >
+                <div key={entry.id} className="group flex items-start gap-3 px-4 py-3 transition-colors hover:bg-secondary/20">
                   {/* Level icon */}
                   <div className={cn("mt-0.5 shrink-0", levelMeta.className)}>
                     <LevelIcon className="h-3.5 w-3.5" />
                   </div>
 
                   {/* Main content */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-foreground leading-snug">{entry.message}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs leading-snug text-foreground">{entry.message}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
                       {/* Category badge */}
                       <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                         <CatIcon className="h-3 w-3" />
                         {catMeta.label}
                       </span>
                       {/* Actor */}
-                      <span className="text-[10px] text-muted-foreground/60 font-mono">
+                      <span className="font-mono text-[10px] text-muted-foreground/60">
                         by <span className="text-muted-foreground">{entry.actor}</span>
                       </span>
                     </div>
@@ -404,19 +367,15 @@ export function ServerActivityLogTab({ id }: ServerActivityLogTabProps) {
 
                   {/* Timestamps */}
                   <div className="shrink-0 text-right">
-                    <p className="text-[10px] text-muted-foreground font-mono">
-                      {formatRelativeTime(entry.timestamp)}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground/50 font-mono mt-0.5 group-hover:text-muted-foreground/80 transition-colors">
-                      {formatTimestamp(entry.timestamp)}
-                    </p>
+                    <p className="font-mono text-[10px] text-muted-foreground">{formatRelativeTime(entry.timestamp)}</p>
+                    <p className="mt-0.5 font-mono text-[9px] text-muted-foreground/50 transition-colors group-hover:text-muted-foreground/80">{formatTimestamp(entry.timestamp)}</p>
                   </div>
                 </div>
-              )
+              );
             })
           )}
         </div>
       </Card>
     </div>
-  )
+  );
 }

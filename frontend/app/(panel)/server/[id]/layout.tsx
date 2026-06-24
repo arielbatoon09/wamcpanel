@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { ServerDetailsLayout } from "@/components/features/servers/detail/server-details-layout"
+import { ServerDetailsLayout } from "@/components/features/servers/detail/server-details-layout";
 
 export default function ServerDetailLayout({ children }: { children: React.ReactNode }) {
-  return <ServerDetailsLayout>{children}</ServerDetailsLayout>
+  return <ServerDetailsLayout>{children}</ServerDetailsLayout>;
 }

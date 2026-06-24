@@ -2,11 +2,11 @@ export interface ServerAPIResponse {
   id: string;
   name: string;
   description: string;
-  status: 'online' | 'offline' | 'starting' | 'stopping';
+  status: "online" | "offline" | "starting" | "stopping";
   host: string;
   port: number;
   version: string;
-  software: 'Vanilla' | 'Paper' | 'Forge' | 'Velocity';
+  software: "Vanilla" | "Paper" | "Forge" | "Velocity";
   maxPlayers: number;
   currentPlayers: number;
   cpuLimit: number; // e.g. 200 for 200% (2 cores)
@@ -18,7 +18,7 @@ export interface ServerAPIResponse {
   };
   createdAt: string;
   updatedAt: string;
-  javaVersion?: '17' | '21' | '25';
+  javaVersion?: "17" | "21" | "25";
 }
 
 export const INITIAL_SERVERS: ServerAPIResponse[] = [
@@ -41,7 +41,7 @@ export const INITIAL_SERVERS: ServerAPIResponse[] = [
       uptime: 86400 * 3 + 12400, // 3 days +
     },
     createdAt: "2026-01-10T12:00:00Z",
-    updatedAt: "2026-06-23T18:00:00Z"
+    updatedAt: "2026-06-23T18:00:00Z",
   },
   {
     id: "srv-02",
@@ -62,7 +62,7 @@ export const INITIAL_SERVERS: ServerAPIResponse[] = [
       uptime: 0,
     },
     createdAt: "2026-02-15T09:30:00Z",
-    updatedAt: "2026-06-24T00:20:00Z"
+    updatedAt: "2026-06-24T00:20:00Z",
   },
   {
     id: "srv-03",
@@ -83,7 +83,7 @@ export const INITIAL_SERVERS: ServerAPIResponse[] = [
       uptime: 86400 * 14 + 43200, // 14 days +
     },
     createdAt: "2026-01-01T00:00:00Z",
-    updatedAt: "2026-06-23T23:55:00Z"
+    updatedAt: "2026-06-23T23:55:00Z",
   },
   {
     id: "srv-04",
@@ -104,6 +104,6 @@ export const INITIAL_SERVERS: ServerAPIResponse[] = [
       uptime: 0,
     },
     createdAt: "2026-03-20T16:45:00Z",
-    updatedAt: "2026-06-23T12:00:00Z"
-  }
+    updatedAt: "2026-06-23T12:00:00Z",
+  },
 ];

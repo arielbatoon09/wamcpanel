@@ -1,17 +1,7 @@
 "use client";
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-import {
-  DEFAULT_THEME_COLOR,
-  THEME_COLORS,
-  type ThemeColor,
-} from "@/constants/theme-colors";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { DEFAULT_THEME_COLOR, THEME_COLORS, type ThemeColor } from "@/constants/theme-colors";
 
 const STORAGE_KEY = "wamc-accent-color";
 
@@ -30,14 +20,8 @@ function applyAccentColor(color: ThemeColor) {
   root.style.setProperty("--sidebar-ring", color.ring);
 }
 
-export function ThemeColorProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [accentColor, setAccentColorState] = useState<ThemeColor>(
-    DEFAULT_THEME_COLOR
-  );
+export function ThemeColorProvider({ children }: { children: React.ReactNode }) {
+  const [accentColor, setAccentColorState] = useState<ThemeColor>(DEFAULT_THEME_COLOR);
 
   // On mount, restore persisted color
   useEffect(() => {
@@ -46,8 +30,10 @@ export function ThemeColorProvider({
       if (saved) {
         const found = THEME_COLORS.find((c) => c.name === saved);
         if (found) {
-          setAccentColorState(found);
-          applyAccentColor(found);
+          setTimeout(() => {
+            setAccentColorState(found);
+            applyAccentColor(found);
+          }, 0);
         }
       }
     } catch {
@@ -65,19 +51,13 @@ export function ThemeColorProvider({
     }
   }, []);
 
-  return (
-    <ThemeColorContext.Provider value={{ accentColor, setAccentColor }}>
-      {children}
-    </ThemeColorContext.Provider>
-  );
+  return <ThemeColorContext.Provider value={{ accentColor, setAccentColor }}>{children}</ThemeColorContext.Provider>;
 }
 
 export function useThemeColorContext(): ThemeColorContextValue {
   const ctx = useContext(ThemeColorContext);
   if (!ctx) {
-    throw new Error(
-      "useThemeColorContext must be used inside <ThemeColorProvider>"
-    );
+    throw new Error("useThemeColorContext must be used inside <ThemeColorProvider>");
   }
   return ctx;
 }

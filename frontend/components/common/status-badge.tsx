@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { motion } from "motion/react"
+import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 
 interface StatusBadgeProps {
-  status: "online" | "offline" | "starting" | "stopping"
-  className?: string
+  status: "online" | "offline" | "starting" | "stopping";
+  className?: string;
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -34,17 +34,13 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
       dotClass: "bg-rose-500",
       pulse: true,
     },
-  }
+  };
 
-  const current = configs[status] || configs.offline
+  const current = configs[status] || configs.offline;
 
   return (
     <span
-      className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-md shadow-xs transition-colors duration-300",
-        current.bgClass,
-        className
-      )}
+      className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold shadow-xs backdrop-blur-md transition-colors duration-300", current.bgClass, className)}
     >
       <span className="relative flex h-2 w-2">
         {current.pulse && (
@@ -58,9 +54,9 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
             className={cn("absolute inline-flex h-full w-full rounded-full opacity-75", current.dotClass)}
           />
         )}
-        <span className={cn("relative inline-flex rounded-full h-2 w-2", current.dotClass)} />
+        <span className={cn("relative inline-flex h-2 w-2 rounded-full", current.dotClass)} />
       </span>
       {current.label}
     </span>
-  )
+  );
 }

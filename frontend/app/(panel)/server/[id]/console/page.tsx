@@ -1,20 +1,20 @@
-import { ServerConsoleSection } from "@/components/features/servers/detail/server-console-section"
+import { ServerConsoleSection } from "@/components/features/servers/detail/server-console-section";
 
 interface ConsolePageProps {
-  params: Promise<{ id: string }>
+  params: Promise<{ id: string }>;
 }
 
 export const metadata = {
   title: "Minecraft Server Panel - Console",
   description: "Live console logs for Minecraft server.",
-}
+};
 
 export default async function ConsolePage({ params }: ConsolePageProps) {
-  const { id } = await params
+  const { id } = await params;
 
   return (
-    <div className="animate-in fade-in duration-300 lg:h-full h-[450px]">
+    <div className="h-[450px] animate-in duration-300 fade-in lg:h-full">
       <ServerConsoleSection id={id} />
     </div>
-  )
+  );
 }

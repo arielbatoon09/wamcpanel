@@ -5,7 +5,7 @@ interface ServerState {
   servers: ServerAPIResponse[];
   selectedServerId: string | null;
   logs: Record<string, string[]>;
-  
+
   // Actions
   selectServer: (id: string | null) => void;
   startServer: (id: string) => void;
@@ -14,6 +14,7 @@ interface ServerState {
   killServer: (id: string) => void;
   addServer: (server: Omit<ServerAPIResponse, "id" | "status" | "metrics" | "createdAt" | "updatedAt" | "currentPlayers">) => void;
   deleteServer: (id: string) => void;
+  updateServer: (id: string, updates: Partial<ServerAPIResponse>) => void;
   addLog: (serverId: string, log: string) => void;
   clearLogs: (serverId: string) => void;
   tickMetrics: () => void;
@@ -35,7 +36,7 @@ const generateInitialLogs = (server: ServerAPIResponse): string[] => {
     `[${server.software}] Preparing start region for dimension minecraft:overworld`,
     `[${server.software}] Time elapsed: 1420 ms`,
     `[${server.software}] Done (${(Math.random() * 2 + 1).toFixed(3)}s)! For help, type "help"`,
-    `[SYSTEM] Server status: ${server.status.toUpperCase()}`
+    `[SYSTEM] Server status: ${server.status.toUpperCase()}`,
   ];
 };
 
@@ -175,8 +176,14 @@ export const useServerStore = create<ServerState>((set, get) => {
       }));
     },
 
+    updateServer: (id, updates) => {
+      set((state) => ({
+        servers: state.servers.map((s) => (s.id === id ? { ...s, ...updates } : s)),
+      }));
+    },
+
     addLog: (serverId, log) => {
-      const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const timestamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       const formattedLog = `[${timestamp}] ${log}`;
       set((state) => ({
         logs: {
@@ -199,23 +206,17 @@ export const useServerStore = create<ServerState>((set, get) => {
       set((state) => ({
         servers: state.servers.map((s) => {
           if (s.status !== "online") return s;
-          
+
           // Uptime increment
           const nextUptime = s.metrics.uptime + 2;
-          
+
           // CPU variance: random float between 2% and 40% (within bounds of cpuLimit)
           const randomCpuFactor = Math.random();
           const targetCpu = Math.min(s.cpuLimit, Number((2 + randomCpuFactor * 35).toFixed(1)));
-          
+
           // RAM usage variance: small changes around existing usage
           const ramDelta = (Math.random() - 0.5) * 50; // max 25MB diff
-          const targetRam = Math.min(
-            s.ramLimit - 100, 
-            Math.max(
-              256, 
-              Math.floor(s.metrics.ramUsage + ramDelta)
-            )
-          );
+          const targetRam = Math.min(s.ramLimit - 100, Math.max(256, Math.floor(s.metrics.ramUsage + ramDelta)));
 
           // Player count fluctuations occasionally
           let targetPlayers = s.currentPlayers;
