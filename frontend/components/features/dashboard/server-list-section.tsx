@@ -16,7 +16,9 @@ interface Filters {
 }
 
 export function ServerListSection() {
-  const { data: apiServers, isLoading: apiLoading } = useServers();
+  const { data: apiServers, isLoading: apiLoading } = useServers({
+    refetchInterval: 3000,
+  });
   const { setServers } = useServerStore();
   const [filters, setFilters] = useState<Filters>({ search: "", status: "all", software: "all" });
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useServerStore } from "@/hooks/useServerStore";
+import { useServer } from "@/services/server-service";
 import { Button } from "@/components/ui/button";
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -22,12 +23,47 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
   const params = useParams();
   const id = params.id as string;
 
-  const { servers, startServer, stopServer, restartServer, killServer } = useServerStore();
+  const { servers, setServers, startServer, stopServer, restartServer, killServer, deletingIds } = useServerStore();
+
+  const isDeleting = deletingIds.includes(id);
+
+  const { data: apiServer, isLoading } = useServer(id, {
+    refetchInterval: 2000,
+    enabled: typeof window !== "undefined" && !!id && !isDeleting,
+  });
 
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sync details from API to Zustand store on load/refresh
+  useEffect(() => {
+    if (apiServer) {
+      const exists = servers.some((s) => s.id === apiServer.id);
+      if (exists) {
+        setServers(servers.map((s) => (s.id === apiServer.id ? apiServer : s)));
+      } else {
+        setServers([...servers, apiServer]);
+      }
+    }
+  }, [apiServer, setServers]);
+
   const server = servers.find((s) => s.id === id);
 
-  if (!server) return null;
+  if (isLoading || !server) {
+    return (
+      <div className="relative flex min-h-[50vh] flex-col items-center justify-center overflow-hidden bg-background px-4">
+        <div className="relative z-10 flex flex-col items-center gap-4 select-none">
+          <Logo textSize="xl" className="animate-pulse" />
+          <div className="mt-2 flex items-center gap-2 font-mono text-xs tracking-wider text-muted-foreground/60 uppercase">
+            <svg className="h-4 w-4 animate-spin text-primary" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Loading Server Details…
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isOnline = server.status === "online";
   const isOffline = server.status === "offline";

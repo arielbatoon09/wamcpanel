@@ -23,6 +23,7 @@ export interface ServerAPIResponse {
   };
   createdAt: string;
   updatedAt: string;
+  settings?: Record<string, string>;
 }
 
 export const INITIAL_SERVERS: ServerAPIResponse[] = [

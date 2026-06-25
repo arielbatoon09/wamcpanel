@@ -28,6 +28,7 @@ export class CreateServerService {
 
     const server = await this.serverRepository.create({
       ...data,
+      description: data.description?.trim() || "A Minecraft Server",
       software: data.software as ServerSoftware,
       maxPlayers,
       userId,

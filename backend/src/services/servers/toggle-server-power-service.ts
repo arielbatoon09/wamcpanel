@@ -4,6 +4,7 @@ import { NotFoundException } from "@/exceptions";
 import { toServerResponse } from "@/utils/server-mapper";
 import { docker } from "@/lib/docker";
 import { getServerDirectory } from "@/utils/server-path";
+import { readServerProperties } from "@/utils/server-properties";
 
 @injectable()
 export class ToggleServerPowerService {
@@ -34,8 +35,14 @@ export class ToggleServerPowerService {
         try {
           let containerExists = false;
           try {
-            await container.inspect();
+            const inspectData = await container.inspect();
             containerExists = true;
+
+            // Recreate container if it exists but is offline to apply database configuration changes (like version, RAM/CPU limits, Java runtime)
+            if (!inspectData.State.Running) {
+              await container.remove({ force: true }).catch(() => { });
+              containerExists = false;
+            }
           } catch (inspectError: any) {
             if (inspectError.statusCode !== 404) {
               throw inspectError;
@@ -57,6 +64,9 @@ export class ToggleServerPowerService {
               });
             });
 
+            const properties = await readServerProperties(id);
+            const onlineMode = properties["online-mode"] !== "false";
+
             // Create container
             const hostDir = getServerDirectory(id);
             const dockerBindDir = process.platform === "win32"
@@ -66,7 +76,8 @@ export class ToggleServerPowerService {
               "EULA=TRUE",
               `TYPE=${existing.software.toUpperCase()}`,
               `VERSION=${existing.version}`,
-              `ONLINE_MODE=FALSE`,
+              `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`,
+              "CREATE_CONSOLE_IN_PIPE=true",
             ];
 
             if (existing.worldSeed) {
@@ -202,38 +213,28 @@ export class ToggleServerPowerService {
         ramUsage: Math.floor(existing.ramLimit * 0.4),
       });
 
-      container.restart().then(async () => {
+      (async () => {
         try {
-          await this.serverRepository.update(id, userId, {
-            status: "STARTING",
-            cpuUsage: 85,
-            ramUsage: Math.floor(existing.ramLimit * 0.2),
-          });
-          setTimeout(async () => {
-            try {
-              const inspectData = await container.inspect();
-              if (inspectData.State.Running) {
-                await this.serverRepository.update(id, userId, {
-                  status: "ONLINE",
-                  cpuUsage: 14.8,
-                  ramUsage: Math.floor(existing.ramLimit * 0.55),
-                  uptime: 1,
-                });
-              }
-            } catch (e) { }
-          }, 5000);
-        } catch (e) { }
-      }).catch(async () => {
-        // Fallback
-        try {
+          try {
+            await container.stop({ t: 10 }).catch(() => { });
+          } catch (e) { }
+
+          try {
+            await container.remove({ force: true }).catch(() => { });
+          } catch (e) { }
+
+          await this.serverRepository.update(id, userId, { status: "OFFLINE" });
+          await this.execute(id, userId, "start");
+        } catch (err) {
+          console.error("Failed to restart container:", err);
           await this.serverRepository.update(id, userId, {
             status: "OFFLINE",
             cpuUsage: 0,
             ramUsage: 0,
             uptime: 0,
-          });
-        } catch (e) { }
-      });
+          }).catch(() => { });
+        }
+      })();
 
       return {
         message: "Server restart sequence initiated",

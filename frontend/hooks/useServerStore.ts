@@ -6,6 +6,7 @@ interface ServerState {
   servers: ServerAPIResponse[];
   selectedServerId: string | null;
   logs: Record<string, string[]>;
+  deletingIds: string[];
 
   // Actions
   setServers: (servers: ServerAPIResponse[]) => void;
@@ -23,23 +24,7 @@ interface ServerState {
 }
 
 const generateInitialLogs = (server: ServerAPIResponse): string[] => {
-  if (server.status === "offline") {
-    return ["[SYSTEM] Server is currently offline."];
-  }
-  return [
-    `[SYSTEM] Server loaded from database.`,
-    `[${server.software}] Loading libraries, please wait...`,
-    `[${server.software}] Starting minecraft server version ${server.version}`,
-    `[${server.software}] Loading properties`,
-    `[${server.software}] Default game type: SURVIVAL`,
-    `[${server.software}] Generating keypair`,
-    `[${server.software}] Starting Minecraft server on ${server.host}:${server.port}`,
-    `[${server.software}] Preparing level "world"`,
-    `[${server.software}] Preparing start region for dimension minecraft:overworld`,
-    `[${server.software}] Time elapsed: 1420 ms`,
-    `[${server.software}] Done (${(Math.random() * 2 + 1).toFixed(3)}s)! For help, type "help"`,
-    `[SYSTEM] Server status: ${server.status.toUpperCase()}`,
-  ];
+  return [`[SYSTEM] Console session initialized. Server is ${server.status.toLowerCase()}.`];
 };
 
 export const useServerStore = create<ServerState>((set, get) => {
@@ -47,6 +32,7 @@ export const useServerStore = create<ServerState>((set, get) => {
     servers: [],
     selectedServerId: null,
     logs: {},
+    deletingIds: [],
 
     setServers: (servers) => {
       const currentLogs = get().logs;
@@ -87,24 +73,6 @@ export const useServerStore = create<ServerState>((set, get) => {
         ),
       }));
       get().addLog(id, `[SYSTEM] Power signal: START received.`);
-      get().addLog(id, `[${server.software}] Loading jar file and allocating memory...`);
-
-      // Complete starting sequence in 3 seconds
-      setTimeout(() => {
-        set((state) => ({
-          servers: state.servers.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  status: "online",
-                  metrics: { ...s.metrics, cpuUsage: 12.4, ramUsage: Math.floor(s.ramLimit * 0.5), uptime: 1 },
-                }
-              : s
-          ),
-        }));
-        get().addLog(id, `[${server.software}] Preparing spawn area...`);
-        get().addLog(id, `[${server.software}] Done! Server is now ONLINE.`);
-      }, 3000);
     },
 
     stopServer: (id) => {
@@ -126,34 +94,27 @@ export const useServerStore = create<ServerState>((set, get) => {
         ),
       }));
       get().addLog(id, `[SYSTEM] Power signal: STOP received.`);
-      get().addLog(id, `[${server.software}] Saving players...`);
-      get().addLog(id, `[${server.software}] Saving worlds...`);
-
-      // Complete stopping sequence in 2 seconds
-      setTimeout(() => {
-        set((state) => ({
-          servers: state.servers.map((s) =>
-            s.id === id
-              ? {
-                  ...s,
-                  status: "offline",
-                  currentPlayers: 0,
-                  metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
-                }
-              : s
-          ),
-        }));
-        get().addLog(id, `[SYSTEM] Server shutdown complete. STATUS: OFFLINE.`);
-      }, 2000);
     },
 
     restartServer: (id) => {
+      const server = get().servers.find((s) => s.id === id);
+      if (!server) return;
+
       serverService.togglePower({ id, action: "restart" }).catch(console.error);
+
+      // Transition to stopping as restart starts by stopping
+      set((state) => ({
+        servers: state.servers.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                status: "stopping",
+                metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
+              }
+            : s
+        ),
+      }));
       get().addLog(id, `[SYSTEM] Power signal: RESTART received.`);
-      get().stopServer(id);
-      setTimeout(() => {
-        get().startServer(id);
-      }, 2500);
     },
 
     killServer: (id) => {
@@ -178,10 +139,17 @@ export const useServerStore = create<ServerState>((set, get) => {
     },
 
     deleteServer: (id) => {
-      serverService.delete(id).catch(console.error);
       set((state) => ({
+        deletingIds: [...state.deletingIds, id],
         servers: state.servers.filter((s) => s.id !== id),
       }));
+      serverService.delete(id)
+        .catch(console.error)
+        .finally(() => {
+          set((state) => ({
+            deletingIds: state.deletingIds.filter((x) => x !== id),
+          }));
+        });
     },
 
     updateServer: (id, updates) => {

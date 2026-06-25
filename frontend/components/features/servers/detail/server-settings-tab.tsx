@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -33,22 +33,54 @@ export function ServerSettingsTab({ id }: { id: string }) {
   const [maxPlayers, setMaxPlayers] = useState<string>(String(server?.maxPlayers || 20));
   const [viewDistance, setViewDistance] = useState<string>("10");
   const [simDistance, setSimDistance] = useState<string>("8");
-  const [ramAllocation, setRamAllocation] = useState<number>(server?.ramLimit || 512);
+  const [ramAllocation, setRamAllocation] = useState<number>(server?.ramLimit || 4096);
 
   // Security States
-  const [publicServer, setPublicServer] = useState<boolean>(false);
   const [spawnProtection, setSpawnProtection] = useState<string>("16");
   const [whitelist, setWhitelist] = useState<boolean>(false);
   const [enforceWhitelist, setEnforceWhitelist] = useState<boolean>(false);
   const [onlineMode, setOnlineMode] = useState<boolean>(true);
 
   // Startup & JVM States
-  const [javaVersion, setJavaVersion] = useState<string>("java-21");
+  const [javaVersion, setJavaVersion] = useState<string>("21");
   const [useNogui, setUseNogui] = useState<boolean>(true);
   const [jvmArgs, setJvmArgs] = useState<string>("");
 
   // Version States
   const [mcVersion, setMcVersion] = useState<string>("1.21.11");
+
+  // Track loaded server to only initialize once
+  const [loadedServerId, setLoadedServerId] = useState<string | null>(null);
+
+  // Sync state from server on mount/change
+  useEffect(() => {
+    if (server && loadedServerId !== server.id) {
+      setLoadedServerId(server.id);
+      setMotd(server.description || "A Minecraft Server");
+      setMaxPlayers(String(server.maxPlayers || 20));
+      setRamAllocation(server.ramLimit || 4096);
+      setJavaVersion(server.javaVersion || "21");
+      setMcVersion(server.version || "1.21.11");
+
+      const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+      const settings = server.settings || {};
+
+      setGameMode(caps(settings.gamemode) || "Survival");
+      setDifficulty(caps(settings.difficulty) || "Easy");
+
+      // Defaults: Online mode true, PVP true, Game Mode Survival
+      setPvp(settings.pvp !== undefined ? settings.pvp === "true" : true);
+      setAllowFlight(settings["allow-flight"] === "true");
+      setCommandBlocks(settings["enable-command-block"] === "true");
+      setHardcore(settings.hardcore === "true");
+      setViewDistance(settings["view-distance"] || "10");
+      setSimDistance(settings["simulation-distance"] || "8");
+      setSpawnProtection(settings["spawn-protection"] || "16");
+      setWhitelist(settings["white-list"] === "true");
+      setEnforceWhitelist(settings["enforce-whitelist"] === "true");
+      setOnlineMode(settings["online-mode"] !== undefined ? settings["online-mode"] === "true" : true);
+    }
+  }, [server, loadedServerId]);
 
   // raw server.properties Dialog State
   const [propertiesOpen, setPropertiesOpen] = useState(false);
@@ -60,6 +92,23 @@ export function ServerSettingsTab({ id }: { id: string }) {
       description: motd,
       maxPlayers: Number(maxPlayers) || 20,
       ramLimit: ramAllocation,
+      javaVersion: javaVersion,
+      version: mcVersion,
+      settings: {
+        motd: motd,
+        gamemode: gameMode.toLowerCase(),
+        difficulty: difficulty.toLowerCase(),
+        pvp: String(pvp),
+        "allow-flight": String(allowFlight),
+        "enable-command-block": String(commandBlocks),
+        hardcore: String(hardcore),
+        "view-distance": viewDistance,
+        "simulation-distance": simDistance,
+        "spawn-protection": spawnProtection,
+        "white-list": String(whitelist),
+        "enforce-whitelist": String(enforceWhitelist),
+        "online-mode": String(onlineMode),
+      },
     });
     addLog(id, `[SYSTEM] Properties saved. Uptime limits and limits updated.`);
     toast.success("Settings saved successfully");
@@ -371,19 +420,6 @@ export function ServerSettingsTab({ id }: { id: string }) {
             </div>
 
             <div className="space-y-4 text-xs">
-              {/* Public Server Checkbox */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="public" checked={publicServer} onCheckedChange={(val) => setPublicServer(val === true)} />
-                <label htmlFor="public" className="flex cursor-pointer items-center gap-1 text-xs font-semibold text-foreground/80">
-                  Public Server
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3 w-3 cursor-help text-muted-foreground/60" />
-                    </TooltipTrigger>
-                    <TooltipContent>Broadcast server to external discoverability nodes.</TooltipContent>
-                  </Tooltip>
-                </label>
-              </div>
 
               {/* Spawn Protection */}
               <div className="space-y-1.5">
@@ -475,25 +511,19 @@ export function ServerSettingsTab({ id }: { id: string }) {
                       <SelectValue placeholder="Java Runtime" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="java-21" className="cursor-pointer">
-                        Java 21.0.11 (SquidServers Provided)
+                      <SelectItem value="21" className="cursor-pointer">
+                        Java 21 (Paper Standard)
                       </SelectItem>
-                      <SelectItem value="java-17" className="cursor-pointer">
-                        Java 17.0.9 (System Host)
+                      <SelectItem value="17" className="cursor-pointer">
+                        Java 17 (Legacy Support)
                       </SelectItem>
-                      <SelectItem value="java-8" className="cursor-pointer">
-                        Java 1.8.0 (Legacy)
+                      <SelectItem value="25" className="cursor-pointer">
+                        Java 25 (Experimental)
                       </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Manual Button */}
-                <div className="pt-1">
-                  <Button type="button" variant="outline" size="sm" className="h-8 cursor-pointer border-border text-xs font-semibold">
-                    Select Java Manually
-                  </Button>
-                </div>
 
                 {/* Nogui Checkbox */}
                 <div className="flex items-center space-x-2 pt-2">

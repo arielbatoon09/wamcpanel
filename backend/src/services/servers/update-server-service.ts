@@ -2,6 +2,7 @@ import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
 import { NotFoundException } from "@/exceptions";
 import { toServerResponse } from "@/utils/server-mapper";
+import { writeServerProperties, readServerProperties } from "@/utils/server-properties";
 
 @injectable()
 export class UpdateServerService {
@@ -15,6 +16,9 @@ export class UpdateServerService {
       description?: string;
       ramLimit?: number;
       cpuLimit?: number;
+      javaVersion?: string;
+      version?: string;
+      settings?: Record<string, any>;
     }
   ) {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
@@ -22,11 +26,23 @@ export class UpdateServerService {
       throw new NotFoundException("Server not found");
     }
 
-    const updated = await this.serverRepository.update(id, userId, data);
+    const { settings, ...dbData } = data;
+
+    if (settings) {
+      await writeServerProperties(id, settings);
+    }
+
+    const updated = await this.serverRepository.update(id, userId, dbData);
+    const updatedSettings = await readServerProperties(id);
 
     return {
       message: "Server updated successfully",
-      data: { server: toServerResponse(updated) },
+      data: {
+        server: {
+          ...toServerResponse(updated),
+          settings: updatedSettings,
+        },
+      },
     };
   }
 }

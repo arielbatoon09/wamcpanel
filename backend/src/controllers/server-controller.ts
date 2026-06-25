@@ -60,13 +60,16 @@ export class ServerController extends BaseController {
   async update(req: Request, res: Response) {
     const userId = (req as any).user?.sub;
     const { id } = req.params as { id: string };
-    const { name, description, ramLimit, cpuLimit } = req.body;
+    const { name, description, ramLimit, cpuLimit, javaVersion, version, settings } = req.body;
 
     const result = await this.updateServerService.execute(id, userId, {
       name,
       description,
       ramLimit,
       cpuLimit,
+      javaVersion,
+      version,
+      settings,
     });
 
     return this.ok(res, result.data, result.message);

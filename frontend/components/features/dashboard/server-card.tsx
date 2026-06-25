@@ -48,7 +48,7 @@ export function ServerCard({ server }: ServerCardProps) {
             <StatusBadge status={server.status} />
           </div>
 
-          <p className="mt-2 mb-4 line-clamp-2 min-h-[32px] text-xs leading-relaxed text-muted-foreground">{server.description}</p>
+          <p className="mt-2 mb-4 line-clamp-2 min-h-[32px] text-xs leading-relaxed text-muted-foreground">{server.description || "A Minecraft Server"}</p>
 
           {/* Quick Metrics Grid */}
           <div className="grid grid-cols-3 gap-2.5 rounded-lg border border-border/50 bg-secondary/50 p-3 font-mono text-xs">

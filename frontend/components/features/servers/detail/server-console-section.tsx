@@ -42,6 +42,7 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
     const socket = io(socketUrl);
 
     socket.on("connect", () => {
+      clearLogs(id);
       addLog(id, "[SYSTEM] Connected to console gateway.");
       socket.emit("subscribe-logs", id);
     });
@@ -62,7 +63,7 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [id, addLog]);
+  }, [id, addLog, clearLogs]);
 
   // Auto-scroll only when NOT actively filtering
   useEffect(() => {

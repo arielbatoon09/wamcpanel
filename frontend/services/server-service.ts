@@ -61,19 +61,21 @@ export const serverService = {
 };
 
 // TanStack Query Hooks
-export function useServers() {
+export function useServers(options?: { refetchInterval?: number | false; enabled?: boolean }) {
   return useQuery({
     queryKey: ["servers"],
     queryFn: serverService.list,
     enabled: typeof window !== "undefined",
+    ...options,
   });
 }
 
-export function useServer(id: string) {
+export function useServer(id: string, options?: { refetchInterval?: number | false; enabled?: boolean }) {
   return useQuery({
     queryKey: ["server", id],
     queryFn: () => serverService.get(id),
     enabled: typeof window !== "undefined" && !!id,
+    ...options,
   });
 }
 

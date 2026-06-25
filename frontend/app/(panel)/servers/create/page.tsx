@@ -22,7 +22,7 @@ export default function CreateServerPage() {
   const form = useForm({
     defaultValues: {
       name: "",
-      description: "",
+      description: "A Minecraft Server",
       software: "Paper" as "Vanilla" | "Paper" | "Modpack" | "Fabric" | "Bedrock" | "Forge" | "NeoForge" | "Quilt" | "Velocity",
       version: "1.20.4",
       buildNumber: "",

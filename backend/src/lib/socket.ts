@@ -15,14 +15,24 @@ export function initSocketIO(server: HTTPServer) {
     console.log(`Socket connected: ${socket.id}`);
 
     let logStream: Readable | null = null;
+    let currentServerId: string | null = null;
+    let retryTimer: NodeJS.Timeout | null = null;
 
-    socket.on("subscribe-logs", async (serverId: string) => {
-      console.log(`Socket ${socket.id} subscribed to logs of server ${serverId}`);
-      
-      // Clean up previous stream if any
+    const cleanUpStream = () => {
       if (logStream) {
         logStream.destroy();
         logStream = null;
+      }
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+    };
+
+    const attachLogStream = async (serverId: string) => {
+      if (currentServerId !== serverId || socket.disconnected) {
+        cleanUpStream();
+        return;
       }
 
       const containerName = `wamc-server-${serverId}`;
@@ -31,7 +41,6 @@ export function initSocketIO(server: HTTPServer) {
       try {
         await container.inspect();
 
-        // Fetch logs (last 150 lines, and follow new lines)
         const stream = await container.logs({
           follow: true,
           stdout: true,
@@ -39,13 +48,21 @@ export function initSocketIO(server: HTTPServer) {
           tail: 150,
         }) as Readable;
 
+        if (currentServerId !== serverId || socket.disconnected) {
+          stream.destroy();
+          return;
+        }
+
+        cleanUpStream();
         logStream = stream;
 
         stream.on("data", (chunk: Buffer) => {
+          if (currentServerId !== serverId || socket.disconnected) {
+            stream.destroy();
+            return;
+          }
+
           let text = chunk.toString("utf8");
-          
-          // Docker logs stream is multiplexed: each frame starts with an 8-byte header:
-          // [streamType (1 = stdout, 2 = stderr), 0, 0, 0, size1, size2, size3, size4]
           if (
             chunk.length >= 8 &&
             (chunk[0] === 1 || chunk[0] === 2) &&
@@ -56,7 +73,6 @@ export function initSocketIO(server: HTTPServer) {
             text = chunk.subarray(8).toString("utf8");
           }
 
-          // Emit clean text line by line
           const lines = text.split(/\r?\n/);
           for (const line of lines) {
             if (line.trim()) {
@@ -66,16 +82,37 @@ export function initSocketIO(server: HTTPServer) {
         });
 
         stream.on("error", (err) => {
-          socket.emit("log-line", { serverId, line: `[SYSTEM ERROR] Failed to stream logs: ${err.message}` });
+          console.error(`Log stream error for ${serverId}:`, err);
+          handleStreamEnd(serverId);
         });
 
         stream.on("end", () => {
-          socket.emit("log-line", { serverId, line: `[SYSTEM] Log stream ended.` });
+          handleStreamEnd(serverId);
         });
 
       } catch (err: any) {
-        socket.emit("log-line", { serverId, line: `[SYSTEM] Console offline. Container is not running.` });
+        handleStreamEnd(serverId);
       }
+    };
+
+    const handleStreamEnd = (serverId: string) => {
+      cleanUpStream();
+      if (currentServerId !== serverId || socket.disconnected) {
+        return;
+      }
+
+      socket.emit("log-line", { serverId, line: `[SYSTEM] Log stream ended. Waiting for container to start...` });
+
+      retryTimer = setTimeout(() => {
+        attachLogStream(serverId);
+      }, 2000);
+    };
+
+    socket.on("subscribe-logs", async (serverId: string) => {
+      console.log(`Socket ${socket.id} subscribed to logs of server ${serverId}`);
+      currentServerId = serverId;
+      cleanUpStream();
+      attachLogStream(serverId);
     });
 
     socket.on("send-command", async ({ serverId, command }: { serverId: string; command: string }) => {
@@ -92,12 +129,35 @@ export function initSocketIO(server: HTTPServer) {
 
         const exec = await container.exec({
           Cmd: ["mc-send-to-console", command],
+          User: "1000",
           AttachStdout: true,
           AttachStderr: true,
         });
 
         const execStream = await exec.start({});
-        // Execute stream reads but we don't need output as logs are tracked by subscribe-logs
+
+        let output = "";
+        execStream.on("data", (chunk: Buffer) => {
+          let text = chunk.toString("utf8");
+          // Clean Docker multiplexing header if present
+          if (
+            chunk.length >= 8 &&
+            (chunk[0] === 1 || chunk[0] === 2) &&
+            chunk[1] === 0 &&
+            chunk[2] === 0 &&
+            chunk[3] === 0
+          ) {
+            text = chunk.subarray(8).toString("utf8");
+          }
+          output += text;
+        });
+
+        execStream.on("end", () => {
+          if (output.trim()) {
+            console.log(`Command output: ${output.trim()}`);
+            socket.emit("log-line", { serverId, line: `[SYSTEM] Command feedback: ${output.trim()}` });
+          }
+        });
       } catch (err: any) {
         console.error("Failed to execute command:", err);
         socket.emit("log-line", { serverId, line: `[SYSTEM ERROR] Failed to execute command: ${err.message}` });
@@ -106,10 +166,7 @@ export function initSocketIO(server: HTTPServer) {
 
     socket.on("disconnect", () => {
       console.log(`Socket disconnected: ${socket.id}`);
-      if (logStream) {
-        logStream.destroy();
-        logStream = null;
-      }
+      cleanUpStream();
     });
   });
 

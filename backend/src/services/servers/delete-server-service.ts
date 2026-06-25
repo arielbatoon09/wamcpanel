@@ -20,8 +20,12 @@ export class DeleteServerService {
       const container = docker.getContainer(containerName);
       // Remove container forcing shutdown if running
       await container.remove({ force: true });
-    } catch (dockerError) {
-      console.warn(`Docker container removal failed or did not exist for server ${id}:`, dockerError);
+    } catch (dockerError: any) {
+      if (dockerError?.statusCode === 404) {
+        console.warn(`Docker container wamc-server-${id} did not exist, skipped removal.`);
+      } else {
+        console.warn(`Docker container removal failed for server ${id}:`, dockerError);
+      }
     }
 
     // Delete Host Volume Directory

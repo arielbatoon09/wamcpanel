@@ -3,7 +3,7 @@ import { z } from "zod";
 export const createServerSchema = z.object({
   body: z.object({
     name: z.string().min(3, "Server name must be at least 3 characters").max(30, "Server name must be under 30 characters"),
-    description: z.string().max(150, "Description must be under 150 characters").optional().default(""),
+    description: z.string().max(150, "Description must be under 150 characters").optional().default("A Minecraft Server"),
     software: z.enum(["Vanilla", "Paper", "Modpack", "Fabric", "Bedrock", "Forge", "NeoForge", "Quilt", "Velocity"], {
       message: "Please select a valid server software",
     }),
@@ -25,6 +25,9 @@ export const updateServerSchema = z.object({
     description: z.string().max(150).optional(),
     ramLimit: z.coerce.number().int().min(1024).max(65536).optional(),
     cpuLimit: z.coerce.number().int().min(100).max(800).optional(),
+    javaVersion: z.enum(["17", "21", "25"]).optional(),
+    version: z.string().optional(),
+    settings: z.record(z.string(), z.any()).optional(),
   }),
 });
 
