@@ -7,7 +7,7 @@ import { getServerDirectory } from "@/utils/server-path";
 
 @injectable()
 export class ToggleServerPowerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
 
   public async execute(id: string, userId: string, action: "start" | "stop" | "restart" | "kill") {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
@@ -43,8 +43,8 @@ export class ToggleServerPowerService {
           }
 
           if (!containerExists) {
-            const image = "itzg/minecraft-server:latest";
-            
+            const image = `itzg/minecraft-server:java${existing.javaVersion}`;
+
             // Pull image
             await new Promise<void>((resolve, reject) => {
               docker.pull(image, {}, (err, stream) => {
@@ -59,6 +59,9 @@ export class ToggleServerPowerService {
 
             // Create container
             const hostDir = getServerDirectory(id);
+            const dockerBindDir = process.platform === "win32"
+              ? `/mnt/${hostDir.charAt(0).toLowerCase()}${hostDir.slice(2).replace(/\\/g, "/")}`
+              : hostDir;
             const Env = [
               "EULA=TRUE",
               `TYPE=${existing.software.toUpperCase()}`,
@@ -95,7 +98,7 @@ export class ToggleServerPowerService {
                   ],
                 },
                 Binds: [
-                  `${hostDir}:/data`,
+                  `${dockerBindDir}:/data`,
                 ],
                 Memory: existing.ramLimit * 1024 * 1024,
                 NanoCpus: existing.cpuLimit * 10000000,
@@ -132,7 +135,7 @@ export class ToggleServerPowerService {
                 cpuUsage: 0,
                 ramUsage: 0,
                 uptime: 0,
-              }).catch(() => {});
+              }).catch(() => { });
             }
           }, 5000);
 
@@ -143,7 +146,7 @@ export class ToggleServerPowerService {
             cpuUsage: 0,
             ramUsage: 0,
             uptime: 0,
-          }).catch(() => {});
+          }).catch(() => { });
         }
       })();
 
@@ -173,7 +176,7 @@ export class ToggleServerPowerService {
             ramUsage: 0,
             uptime: 0,
           });
-        } catch (e) {}
+        } catch (e) { }
       }).catch(async () => {
         // If container stop fails (e.g. already stopped), set to offline
         try {
@@ -183,7 +186,7 @@ export class ToggleServerPowerService {
             ramUsage: 0,
             uptime: 0,
           });
-        } catch (e) {}
+        } catch (e) { }
       });
 
       return {
@@ -217,9 +220,9 @@ export class ToggleServerPowerService {
                   uptime: 1,
                 });
               }
-            } catch (e) {}
+            } catch (e) { }
           }, 5000);
-        } catch (e) {}
+        } catch (e) { }
       }).catch(async () => {
         // Fallback
         try {
@@ -229,7 +232,7 @@ export class ToggleServerPowerService {
             ramUsage: 0,
             uptime: 0,
           });
-        } catch (e) {}
+        } catch (e) { }
       });
 
       return {
@@ -239,7 +242,7 @@ export class ToggleServerPowerService {
     }
 
     if (action === "kill") {
-      await container.kill().catch(() => {});
+      await container.kill().catch(() => { });
 
       const server = await this.serverRepository.update(id, userId, {
         status: "OFFLINE",

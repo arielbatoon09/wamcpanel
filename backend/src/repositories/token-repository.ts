@@ -1,9 +1,9 @@
 import { injectable, inject } from "tsyringe";
-import { PrismaClient, Token, TokenType } from "../../generated/prisma/client";
+import { PrismaClient, Token, TokenType } from "@prisma/client";
 
 @injectable()
 export class TokenRepository {
-  constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
+  constructor(@inject("PrismaClient") private readonly db: PrismaClient) { }
 
   async createRefreshToken(params: { userId: string; token: string; expiresAt: Date }) {
     const { userId, token, expiresAt } = params;

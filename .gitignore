@@ -28,8 +28,10 @@
 /frontend/yarn-error.log*
 /frontend/pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — ignore actual secrets, track .example templates
 /frontend/.env*
+!/frontend/.env*.example
+
 
 # typescript
 /frontend/*.tsbuildinfo
@@ -49,13 +51,15 @@
 /backend/build/
 /backend/out/
 
-# Environment variables
+# Environment variables — ignore actual secrets, track .example templates
 /backend/.env
 /backend/.env.local
 /backend/.env.development.local
 /backend/.env.test.local
 /backend/.env.production.local
 /backend/*.env
+!/backend/.env.example
+
 
 # Generated Prisma Client (Crucial)
 /backend/src/generated/
@@ -76,6 +80,3 @@
 /backend/coverage/
 /backend/.tsbuildinfo
 /backend/.npm
-
-
-/node_modules

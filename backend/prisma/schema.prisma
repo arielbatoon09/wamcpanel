@@ -39,11 +39,11 @@ enum ServerSoftware {
 
 // Models
 model User {
-  id              String    @id @default(uuid())
-  name            String?
-  email           String    @unique
-  password        String?
-  role            Role      @default(USER)
+  id       String  @id @default(uuid())
+  name     String?
+  email    String  @unique
+  password String?
+  role     Role    @default(USER)
 
   // Tokens
   tokens Token[]
@@ -74,36 +74,36 @@ model Token {
 }
 
 model Server {
-  id                 String         @id @default(uuid())
-  name               String
-  description        String?
-  status             ServerStatus   @default(OFFLINE)
-  host               String         @default("localhost")
-  port               Int
-  version            String
-  buildNumber        String?        @map("build_number")
-  software           ServerSoftware
-  maxPlayers         Int            @default(20)
-  currentPlayers     Int            @default(0)
-  cpuLimit           Int            @default(200)
-  ramLimit           Int            @default(4096)
-  javaVersion        String         @default("21")
+  id             String         @id @default(uuid())
+  name           String
+  description    String?
+  status         ServerStatus   @default(OFFLINE)
+  host           String         @default("localhost")
+  port           Int
+  version        String
+  buildNumber    String?        @map("build_number")
+  software       ServerSoftware
+  maxPlayers     Int            @default(20)
+  currentPlayers Int            @default(0)
+  cpuLimit       Int            @default(200)
+  ramLimit       Int            @default(4096)
+  javaVersion    String         @default("21")
 
   // World configs
-  worldSeed          String?        @map("world_seed")
-  worldType          String         @default("DEFAULT") @map("world_type")
-  generateStructures Boolean        @default(true) @map("generate_structures")
+  worldSeed          String? @map("world_seed")
+  worldType          String  @default("DEFAULT") @map("world_type")
+  generateStructures Boolean @default(true) @map("generate_structures")
 
   // Simulated metrics
-  cpuUsage           Float          @default(0)
-  ramUsage           Float          @default(0)
-  uptime             Int            @default(0)
+  cpuUsage Float @default(0)
+  ramUsage Float @default(0)
+  uptime   Int   @default(0)
 
-  userId             String         @map("user_id")
-  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt          DateTime       @default(now()) @map("created_at")
-  updatedAt          DateTime       @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("tbl_servers")
 }

@@ -1,9 +1,9 @@
 import { injectable, inject } from "tsyringe";
-import { PrismaClient, Server, ServerStatus, ServerSoftware } from "../../generated/prisma/client";
+import { PrismaClient, Server, ServerStatus, ServerSoftware } from "@prisma/client";
 
 @injectable()
 export class ServerRepository {
-  constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
+  constructor(@inject("PrismaClient") private readonly db: PrismaClient) { }
 
   async create(data: {
     name: string;

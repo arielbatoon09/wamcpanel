@@ -13,7 +13,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(8000),
   STAGE: z.nativeEnum(STAGES).default(STAGES.Dev),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  REDIS_URL: z.string().min(1, "REDIS_URL is required"),
   JWT_SECRET: z.string().min(1, "JWT_SECRET is required"),
+  BACKEND_URL: z.string().url().default("http://localhost:8000"),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 });
 
@@ -24,7 +26,9 @@ const parseEnvironment = () => {
       PORT: process.env.PORT,
       STAGE: process.env.STAGE || (process.env.NODE_ENV === "production" ? STAGES.Prod : STAGES.Dev),
       DATABASE_URL: process.env.DATABASE_URL,
+      REDIS_URL: process.env.REDIS_URL,
       JWT_SECRET: process.env.JWT_SECRET,
+      BACKEND_URL: process.env.BACKEND_URL,
       FRONTEND_URL: process.env.FRONTEND_URL,
     });
   } catch (error) {
@@ -45,9 +49,11 @@ const parseEnvironment = () => {
 const parsedEnv = parseEnvironment();
 
 process.env.DATABASE_URL = parsedEnv.DATABASE_URL;
+process.env.REDIS_URL = parsedEnv.REDIS_URL;
 
 export const envConfig = {
   ...parsedEnv,
 };
 
 export type EnvConfig = typeof envConfig;
+
