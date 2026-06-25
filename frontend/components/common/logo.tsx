@@ -9,12 +9,7 @@ interface LogoProps {
   href?: string;
 }
 
-export function Logo({ 
-  className, 
-  iconSize = 32, 
-  textSize = "2xl", 
-  href = "/" 
-}: LogoProps) {
+export function Logo({ className, iconSize = 32, textSize = "2xl", href = "/" }: LogoProps) {
   const containerSizes: Record<string, string> = {
     sm: "h-8 w-8 rounded-lg p-1",
     md: "h-9 w-9 rounded-lg p-1.5",
@@ -34,23 +29,16 @@ export function Logo({
   const actualIconSize = iconSize || (textSize === "2xl" ? 32 : textSize === "xl" ? 28 : 24);
 
   return (
-    <Link href={href} className={cn("flex items-center gap-3.5 group select-none", className)}>
-      <div className={cn(
-        "relative flex items-center justify-center bg-card border border-border/80 shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/50 shrink-0",
-        containerSizes[textSize] || containerSizes["2xl"]
-      )}>
-        <Image 
-          src="/mc-logo.svg" 
-          alt="WAMCPanel logo" 
-          width={actualIconSize} 
-          height={actualIconSize} 
-          className="object-contain" 
-        />
+    <Link href={href} className={cn("group flex items-center gap-3.5 select-none", className)}>
+      <div
+        className={cn(
+          "relative flex shrink-0 items-center justify-center border border-border/80 bg-card shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:border-primary/50",
+          containerSizes[textSize] || containerSizes["2xl"]
+        )}
+      >
+        <Image src="/mc-logo.svg" alt="WAMCPanel logo" width={actualIconSize} height={actualIconSize} className="object-contain" />
       </div>
-      <span className={cn(
-        "font-sans text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text shrink-0",
-        textSizes[textSize] || textSizes["2xl"]
-      )}>
+      <span className={cn("shrink-0 bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text font-sans text-foreground", textSizes[textSize] || textSizes["2xl"])}>
         WAMC<span className="text-primary">Panel</span>
       </span>
     </Link>

@@ -1,5 +1,5 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiClient, setAccessToken } from '@/services/api-client';
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiClient, setAccessToken } from "@/services/api-client";
 
 export interface OnboardingStatus {
   onboarded: boolean;
@@ -26,17 +26,17 @@ export interface AuthResponse {
 
 export const authService = {
   getOnboardingStatus: async (): Promise<OnboardingStatus> => {
-    const response = await apiClient.get<{ data: OnboardingStatus }>('/api/auth/v1/onboarding-status');
+    const response = await apiClient.get<{ data: OnboardingStatus }>("/api/auth/v1/onboarding-status");
     return response.data.data;
   },
 
   signup: async (data: any): Promise<any> => {
-    const response = await apiClient.post('/api/auth/v1/signup', data);
+    const response = await apiClient.post("/api/auth/v1/signup", data);
     return response.data;
   },
 
   login: async (data: any): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>('/api/auth/v1/login', data);
+    const response = await apiClient.post<AuthResponse>("/api/auth/v1/login", data);
     const token = response.data.data?.tokens?.accessToken;
     if (token) {
       setAccessToken(token);
@@ -45,12 +45,12 @@ export const authService = {
   },
 
   getMe: async (): Promise<{ user: AuthUser }> => {
-    const response = await apiClient.get<{ data: { user: AuthUser } }>('/api/auth/v1/me');
+    const response = await apiClient.get<{ data: { user: AuthUser } }>("/api/auth/v1/me");
     return response.data.data;
   },
 
   logout: async (): Promise<any> => {
-    const response = await apiClient.post('/api/auth/v1/logout');
+    const response = await apiClient.post("/api/auth/v1/logout");
     setAccessToken(null);
     return response.data;
   },
@@ -59,8 +59,9 @@ export const authService = {
 // TanStack Query Hooks
 export function useOnboardingStatus() {
   return useQuery({
-    queryKey: ['onboarding-status'],
+    queryKey: ["onboarding-status"],
     queryFn: authService.getOnboardingStatus,
+    enabled: typeof window !== "undefined",
   });
 }
 
@@ -78,9 +79,10 @@ export function useLogin() {
 
 export function useMe() {
   return useQuery({
-    queryKey: ['me'],
+    queryKey: ["me"],
     queryFn: authService.getMe,
     retry: false,
+    enabled: typeof window !== "undefined",
   });
 }
 

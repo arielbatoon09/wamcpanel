@@ -1,8 +1,6 @@
-import axios from 'axios';
+import axios from "axios";
 
-const BACKEND_URL = typeof window === 'undefined'
-  ? (process.env.NEXT_INTERNAL_BACKEND_URL || 'http://backend:8000')
-  : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000');
+const BACKEND_URL = typeof window === "undefined" ? process.env.NEXT_INTERNAL_BACKEND_URL || "http://backend:8000" : "";
 
 let accessToken: string | null = null;
 
@@ -16,7 +14,7 @@ export const apiClient = axios.create({
   baseURL: BACKEND_URL,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -33,20 +31,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
+
     // Ignore if it's the login or refresh token endpoint itself to prevent loops
-    if (originalRequest.url?.includes('/refresh-token') || originalRequest.url?.includes('/login')) {
+    if (originalRequest.url?.includes("/refresh-token") || originalRequest.url?.includes("/login")) {
       return Promise.reject(error);
     }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const res = await axios.post(
-          `${BACKEND_URL}/api/auth/v1/refresh-token`,
-          {},
-          { withCredentials: true }
-        );
+        const res = await axios.post(`${BACKEND_URL}/api/auth/v1/refresh-token`, {}, { withCredentials: true });
         const newAccessToken = res.data.data?.tokens?.accessToken;
         if (newAccessToken) {
           setAccessToken(newAccessToken);

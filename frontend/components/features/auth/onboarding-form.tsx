@@ -58,24 +58,27 @@ export function SignupForm() {
     onSubmit: async ({ value }) => {
       signupMutation.mutate(value, {
         onSuccess: () => {
-          toast.success('Admin account created successfully! Signing you in...');
-          
+          toast.success("Admin account created successfully! Signing you in...");
+
           // Auto login after signup
-          loginMutation.mutate({
-            email: value.email,
-            password: value.password,
-          }, {
-            onSuccess: () => {
-              window.location.href = '/servers';
+          loginMutation.mutate(
+            {
+              email: value.email,
+              password: value.password,
             },
-            onError: () => {
-              window.location.href = '/login';
+            {
+              onSuccess: () => {
+                window.location.href = "/servers";
+              },
+              onError: () => {
+                window.location.href = "/login";
+              },
             }
-          });
+          );
         },
         onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || 'An error occurred during onboarding.');
-        }
+          toast.error(err.response?.data?.message || err.message || "An error occurred during onboarding.");
+        },
       });
     },
   });
@@ -99,7 +102,7 @@ export function SignupForm() {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
-                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Display Name
                 </FieldLabel>
                 <Input
@@ -127,7 +130,7 @@ export function SignupForm() {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
-                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Email Address
                 </FieldLabel>
                 <Input
@@ -161,7 +164,7 @@ export function SignupForm() {
 
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
-                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Password
                 </FieldLabel>
                 <InputGroup>
@@ -182,12 +185,7 @@ export function SignupForm() {
                     className="h-10 w-full bg-background/60 pr-10 placeholder:text-muted-foreground/40"
                   />
                   <InputGroupAddon align="block-end">
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="text-muted-foreground/60 transition-colors hover:text-foreground"
-                    >
+                    <button type="button" tabIndex={-1} onClick={() => setShowPassword((v) => !v)} className="text-muted-foreground/60 transition-colors hover:text-foreground">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </InputGroupAddon>
@@ -198,18 +196,10 @@ export function SignupForm() {
                   <div className="space-y-2 pt-1">
                     <div className="flex h-1 gap-1 overflow-hidden rounded-full">
                       {[1, 2, 3, 4].map((i) => (
-                        <div
-                          key={i}
-                          className={cn(
-                            "h-full flex-1 rounded-full transition-all duration-300",
-                            passwordStrength >= i ? strengthBarColor : "bg-border"
-                          )}
-                        />
+                        <div key={i} className={cn("h-full flex-1 rounded-full transition-all duration-300", passwordStrength >= i ? strengthBarColor : "bg-border")} />
                       ))}
                     </div>
-                    <p className={cn("text-[10px] font-semibold font-mono", strengthColor)}>
-                      {strengthLabel}
-                    </p>
+                    <p className={cn("font-mono text-[10px] font-semibold", strengthColor)}>{strengthLabel}</p>
                   </div>
                 )}
 
@@ -220,14 +210,8 @@ export function SignupForm() {
                       const ok = rule.test(password);
                       return (
                         <div key={rule.label} className="flex items-center gap-2">
-                          {ok ? (
-                            <Check className="h-3 w-3 shrink-0 text-emerald-500" />
-                          ) : (
-                            <X className="h-3 w-3 shrink-0 text-muted-foreground/40" />
-                          )}
-                          <span className={cn("text-[10px] font-mono", ok ? "text-emerald-500" : "text-muted-foreground/60")}>
-                            {rule.label}
-                          </span>
+                          {ok ? <Check className="h-3 w-3 shrink-0 text-emerald-500" /> : <X className="h-3 w-3 shrink-0 text-muted-foreground/40" />}
+                          <span className={cn("font-mono text-[10px]", ok ? "text-emerald-500" : "text-muted-foreground/60")}>{rule.label}</span>
                         </div>
                       );
                     })}
@@ -241,11 +225,7 @@ export function SignupForm() {
       </FieldGroup>
 
       {/* Submit */}
-      <Button
-        type="submit"
-        disabled={isLoading}
-        className="mt-1 h-10 w-full gap-2 font-semibold transition-all duration-200"
-      >
+      <Button type="submit" disabled={isLoading} className="mt-1 h-10 w-full gap-2 font-semibold transition-all duration-200">
         {isLoading ? (
           <>
             <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

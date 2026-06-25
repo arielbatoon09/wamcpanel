@@ -189,9 +189,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
   return (
     <div className="flex h-auto w-full flex-col gap-6 lg:h-full lg:flex-row">
       {/* Sidebar Card Panel on Left */}
-      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card lg:flex">
-        {sidebarContent}
-      </aside>
+      <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card lg:flex">{sidebarContent}</aside>
 
       {/* Mobile Top Header & Navigation Toggle */}
       <div className="flex w-full shrink-0 items-center justify-between border-b border-border bg-card p-3.5 backdrop-blur-md lg:hidden">
@@ -210,9 +208,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
               Console Menu
             </Button>
           </DrawerTrigger>
-          <DrawerContent className="flex h-full w-[280px] flex-col rounded-r-xl border-r p-0">
-            {sidebarContent}
-          </DrawerContent>
+          <DrawerContent className="flex h-full w-[280px] flex-col rounded-r-xl border-r p-0">{sidebarContent}</DrawerContent>
         </Drawer>
       </div>
 

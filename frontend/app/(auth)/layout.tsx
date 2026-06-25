@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 overflow-hidden">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4 py-12">
       {/* Background grid pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.03]"
@@ -38,14 +38,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Auth card */}
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-xl">
-        {children}
-      </div>
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-xl">{children}</div>
 
       {/* Footer */}
-      <p className="relative z-10 mt-8 text-center font-mono text-[10px] tracking-wide text-muted-foreground/40 uppercase">
-        &copy; {new Date().getFullYear()} WAMCPanel &mdash; All rights reserved
-      </p>
+      <p className="relative z-10 mt-8 text-center font-mono text-[10px] tracking-wide text-muted-foreground/40 uppercase">&copy; {new Date().getFullYear()} WAMCPanel &mdash; All rights reserved</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../generated/prisma/client";
 
 @injectable()
 export class UserRepository {

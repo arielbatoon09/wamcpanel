@@ -6,18 +6,21 @@ import { ThemeColorProvider } from "@/components/context/theme-color-provider";
 import { QueryProvider } from "@/components/context/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
-  });
+});
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}>
       <head>
-        <script
+        <Script
+          id="theme-accent-color"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

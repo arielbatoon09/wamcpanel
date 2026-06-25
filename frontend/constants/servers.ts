@@ -1,16 +1,21 @@
 export interface ServerAPIResponse {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   status: "online" | "offline" | "starting" | "stopping";
   host: string;
   port: number;
   version: string;
-  software: "Vanilla" | "Paper" | "Forge" | "Velocity";
+  buildNumber?: string | null;
+  software: "Vanilla" | "Paper" | "Forge" | "Velocity" | "Fabric" | "NeoForge" | "Quilt" | "Modpack" | "Bedrock";
   maxPlayers: number;
   currentPlayers: number;
   cpuLimit: number; // e.g. 200 for 200% (2 cores)
   ramLimit: number; // in MB, e.g. 4096 for 4GB
+  javaVersion?: string | null;
+  worldSeed?: string | null;
+  worldType?: string | null;
+  generateStructures?: boolean;
   metrics: {
     cpuUsage: number;
     ramUsage: number;
@@ -18,7 +23,6 @@ export interface ServerAPIResponse {
   };
   createdAt: string;
   updatedAt: string;
-  javaVersion?: "17" | "21" | "25";
 }
 
 export const INITIAL_SERVERS: ServerAPIResponse[] = [

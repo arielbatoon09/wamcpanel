@@ -32,12 +32,12 @@ export function LoginForm() {
     onSubmit: async ({ value }) => {
       loginMutation.mutate(value, {
         onSuccess: () => {
-          toast.success('Successfully logged in!');
-          window.location.href = '/servers';
+          toast.success("Successfully logged in!");
+          window.location.href = "/servers";
         },
         onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || 'Login failed. Please try again.');
-        }
+          toast.error(err.response?.data?.message || err.message || "Login failed. Please try again.");
+        },
       });
     },
   });
@@ -61,7 +61,7 @@ export function LoginForm() {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
-                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Email Address
                 </FieldLabel>
                 <Input
@@ -89,7 +89,7 @@ export function LoginForm() {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
-                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <FieldLabel htmlFor={field.name} className="block text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                   Password
                 </FieldLabel>
                 <InputGroup>
@@ -106,12 +106,7 @@ export function LoginForm() {
                     className="h-10 w-full bg-background/60 pr-10 placeholder:text-muted-foreground/40"
                   />
                   <InputGroupAddon align="block-end">
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="text-muted-foreground/60 transition-colors hover:text-foreground"
-                    >
+                    <button type="button" tabIndex={-1} onClick={() => setShowPassword((v) => !v)} className="text-muted-foreground/60 transition-colors hover:text-foreground">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </InputGroupAddon>
@@ -124,11 +119,7 @@ export function LoginForm() {
       </FieldGroup>
 
       {/* Submit */}
-      <Button
-        type="submit"
-        disabled={isLoading}
-        className="h-10 w-full gap-2 font-semibold transition-all duration-200"
-      >
+      <Button type="submit" disabled={isLoading} className="h-10 w-full gap-2 font-semibold transition-all duration-200">
         {isLoading ? (
           <>
             <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">

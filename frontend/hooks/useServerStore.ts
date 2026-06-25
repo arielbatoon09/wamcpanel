@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { INITIAL_SERVERS, ServerAPIResponse } from "@/constants/servers";
+import { ServerAPIResponse } from "@/constants/servers";
+import { serverService } from "@/services/server-service";
 
 interface ServerState {
   servers: ServerAPIResponse[];
@@ -7,6 +8,7 @@ interface ServerState {
   logs: Record<string, string[]>;
 
   // Actions
+  setServers: (servers: ServerAPIResponse[]) => void;
   selectServer: (id: string | null) => void;
   startServer: (id: string) => void;
   stopServer: (id: string) => void;
@@ -41,22 +43,36 @@ const generateInitialLogs = (server: ServerAPIResponse): string[] => {
 };
 
 export const useServerStore = create<ServerState>((set, get) => {
-  // Initialize logs for each server
-  const initialLogs: Record<string, string[]> = {};
-  INITIAL_SERVERS.forEach((server) => {
-    initialLogs[server.id] = generateInitialLogs(server);
-  });
-
   return {
-    servers: INITIAL_SERVERS,
+    servers: [],
     selectedServerId: null,
-    logs: initialLogs,
+    logs: {},
+
+    setServers: (servers) => {
+      const currentLogs = get().logs;
+      const newLogs = { ...currentLogs };
+      let logsUpdated = false;
+
+      servers.forEach((server) => {
+        if (!newLogs[server.id]) {
+          newLogs[server.id] = generateInitialLogs(server);
+          logsUpdated = true;
+        }
+      });
+
+      set({
+        servers,
+        logs: logsUpdated ? newLogs : currentLogs,
+      });
+    },
 
     selectServer: (id) => set({ selectedServerId: id }),
 
     startServer: (id) => {
       const server = get().servers.find((s) => s.id === id);
       if (!server || server.status === "online" || server.status === "starting") return;
+
+      serverService.togglePower({ id, action: "start" }).catch(console.error);
 
       // Transition to starting
       set((state) => ({
@@ -95,6 +111,8 @@ export const useServerStore = create<ServerState>((set, get) => {
       const server = get().servers.find((s) => s.id === id);
       if (!server || server.status === "offline" || server.status === "stopping") return;
 
+      serverService.togglePower({ id, action: "stop" }).catch(console.error);
+
       // Transition to stopping
       set((state) => ({
         servers: state.servers.map((s) =>
@@ -130,6 +148,7 @@ export const useServerStore = create<ServerState>((set, get) => {
     },
 
     restartServer: (id) => {
+      serverService.togglePower({ id, action: "restart" }).catch(console.error);
       get().addLog(id, `[SYSTEM] Power signal: RESTART received.`);
       get().stopServer(id);
       setTimeout(() => {
@@ -138,6 +157,7 @@ export const useServerStore = create<ServerState>((set, get) => {
     },
 
     killServer: (id) => {
+      serverService.togglePower({ id, action: "kill" }).catch(console.error);
       set((state) => ({
         servers: state.servers.map((s) =>
           s.id === id
@@ -154,29 +174,18 @@ export const useServerStore = create<ServerState>((set, get) => {
     },
 
     addServer: (newServerData) => {
-      const newId = `srv-${String(get().servers.length + 1).padStart(2, "0")}`;
-      const newServer: ServerAPIResponse = {
-        ...newServerData,
-        id: newId,
-        status: "offline",
-        currentPlayers: 0,
-        metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      set((state) => ({
-        servers: [...state.servers, newServer],
-        logs: { ...state.logs, [newId]: generateInitialLogs(newServer) },
-      }));
+      // Handled directly via React Query mutation
     },
 
     deleteServer: (id) => {
+      serverService.delete(id).catch(console.error);
       set((state) => ({
         servers: state.servers.filter((s) => s.id !== id),
       }));
     },
 
     updateServer: (id, updates) => {
+      serverService.update({ id, data: updates }).catch(console.error);
       set((state) => ({
         servers: state.servers.map((s) => (s.id === id ? { ...s, ...updates } : s)),
       }));
