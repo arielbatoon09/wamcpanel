@@ -97,10 +97,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   const initials = meData?.user?.name
     ? meData.user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .substring(0, 2)
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
     : meData?.user?.email?.substring(0, 2);
 
   return (
@@ -110,7 +110,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
           {/* Logo and Nav links */}
           <div className="flex items-center gap-8">
-            <Logo href="/servers" textSize="sm" className="gap-2" />
+            <Logo href="/servers" textSize="lg" className="gap-2" />
 
             {/* Navigation Items */}
             <nav className="hidden items-center gap-1.5 md:flex">

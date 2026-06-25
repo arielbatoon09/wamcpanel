@@ -72,6 +72,13 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
     }
   }, [serverLogs, isFiltering]);
 
+  const handleClearTerminal = () => {
+    clearLogs(id);
+    if (socketRef.current) {
+      socketRef.current.emit("clear-logs", id);
+    }
+  };
+
   const handleSendCommand = (e: React.FormEvent) => {
     e.preventDefault();
     if (!command.trim()) return;
@@ -126,7 +133,7 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
             {serverLogs.length} lines
           </Badge>
         </div>
-        <Button variant="outline" size="icon" onClick={() => clearLogs(id)} className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-rose-500" title="Clear Terminal Logs">
+        <Button variant="outline" size="icon" onClick={handleClearTerminal} className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-rose-500" title="Clear Terminal Logs">
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>

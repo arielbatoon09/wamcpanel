@@ -2,8 +2,13 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { Server as HTTPServer } from "http";
 import { docker } from "@/lib/docker";
 import { Readable } from "stream";
+import { container } from "tsyringe";
+import { PrismaClient } from "@prisma/client";
+
+const logsClearedTimestamps = new Map<string, number>();
 
 export function initSocketIO(server: HTTPServer) {
+  const prisma = container.resolve<PrismaClient>("PrismaClient");
   const io = new SocketIOServer(server, {
     cors: {
       origin: "*",
@@ -41,12 +46,18 @@ export function initSocketIO(server: HTTPServer) {
       try {
         await container.inspect();
 
-        const stream = await container.logs({
+        const clearedAt = logsClearedTimestamps.get(serverId);
+        const logOptions: any = {
           follow: true,
           stdout: true,
           stderr: true,
           tail: 150,
-        }) as Readable;
+        };
+        if (clearedAt) {
+          logOptions.since = clearedAt;
+        }
+
+        const stream = (await container.logs(logOptions)) as unknown as Readable;
 
         if (currentServerId !== serverId || socket.disconnected) {
           stream.destroy();
@@ -95,9 +106,21 @@ export function initSocketIO(server: HTTPServer) {
       }
     };
 
-    const handleStreamEnd = (serverId: string) => {
+    const handleStreamEnd = async (serverId: string) => {
       cleanUpStream();
       if (currentServerId !== serverId || socket.disconnected) {
+        return;
+      }
+
+      try {
+        const dbServer = await prisma.server.findUnique({
+          where: { id: serverId },
+        });
+        if (!dbServer || dbServer.status === "OFFLINE") {
+          socket.emit("log-line", { serverId, line: `[SYSTEM] Server is offline. Log stream closed.` });
+          return;
+        }
+      } catch (err) {
         return;
       }
 
@@ -113,6 +136,11 @@ export function initSocketIO(server: HTTPServer) {
       currentServerId = serverId;
       cleanUpStream();
       attachLogStream(serverId);
+    });
+
+    socket.on("clear-logs", (serverId: string) => {
+      console.log(`Logs cleared for server ${serverId}`);
+      logsClearedTimestamps.set(serverId, Math.floor(Date.now() / 1000));
     });
 
     socket.on("send-command", async ({ serverId, command }: { serverId: string; command: string }) => {

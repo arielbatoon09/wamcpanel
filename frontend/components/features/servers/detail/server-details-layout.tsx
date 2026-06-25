@@ -230,7 +230,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
       {/* Mobile Top Header & Navigation Toggle */}
       <div className="flex w-full shrink-0 items-center justify-between border-b border-border bg-card p-3.5 backdrop-blur-md lg:hidden">
         <div className="flex min-w-0 items-center gap-3">
-          <Logo href="/servers" textSize="sm" className="gap-2" />
+          <Logo href="/servers" textSize="md" className="gap-2" />
           <div className="min-w-0">
             <h1 className="max-w-[130px] truncate text-xs leading-tight font-extrabold text-foreground">{server.name}</h1>
             <p className="mt-0.5 font-mono text-[10px] leading-none text-muted-foreground">{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Tab</p>
