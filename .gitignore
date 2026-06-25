@@ -80,3 +80,5 @@
 /backend/coverage/
 /backend/.tsbuildinfo
 /backend/.npm
+
+/servers
