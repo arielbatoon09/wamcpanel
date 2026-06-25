@@ -5,7 +5,9 @@ import { useServerStore } from "@/hooks/useServerStore";
 import { useServers } from "@/services/server-service";
 import { ServerFiltersBar } from "@/components/features/dashboard/server-filters-bar";
 import { ServerGrid } from "@/components/features/dashboard/server-grid";
-import { CreateServerDialog } from "@/components/features/dashboard/create-server-dialog";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
 interface Filters {
   search: string;
@@ -36,7 +38,12 @@ export function ServerListSection() {
       {/* Toolbar: Filters + Add Server */}
       <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-border bg-card/40 p-4 backdrop-blur-md md:flex-row">
         <ServerFiltersBar onFiltersChange={setFilters} />
-        <CreateServerDialog />
+        <Button asChild className="ml-auto h-10 cursor-pointer gap-1.5 px-4 font-semibold shadow-xs md:ml-0">
+          <Link href="/servers/create">
+            <Plus className="h-4 w-4" />
+            Add Server
+          </Link>
+        </Button>
       </div>
 
       {/* Server Grid */}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Terminal, Send, Trash2, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { io, Socket } from "socket.io-client";
 
 interface ServerConsoleSectionProps {
   id: string;
@@ -17,10 +18,11 @@ interface ServerConsoleSectionProps {
 const EMPTY_LOGS: string[] = [];
 
 export function ServerConsoleSection({ id, className }: ServerConsoleSectionProps) {
-  const { logs, addLog, clearLogs, servers, stopServer } = useServerStore();
+  const { logs, addLog, clearLogs, servers } = useServerStore();
   const [command, setCommand] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const terminalEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
 
   const server = servers.find((s) => s.id === id);
   const serverLogs = logs[id] || EMPTY_LOGS;
@@ -33,6 +35,34 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
   }, [serverLogs, searchQuery]);
 
   const isFiltering = searchQuery.trim().length > 0;
+
+  // Socket Connection and Logs Streaming
+  useEffect(() => {
+    const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const socket = io(socketUrl);
+
+    socket.on("connect", () => {
+      addLog(id, "[SYSTEM] Connected to console gateway.");
+      socket.emit("subscribe-logs", id);
+    });
+
+    socket.on("log-line", (data: { serverId: string; line: string }) => {
+      if (data.serverId === id) {
+        addLog(id, data.line);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      addLog(id, "[SYSTEM] Disconnected from console gateway.");
+    });
+
+    socketRef.current = socket;
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [id, addLog]);
 
   // Auto-scroll only when NOT actively filtering
   useEffect(() => {
@@ -51,39 +81,14 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
 
     if (!server) return;
 
-    if (server.status !== "online") {
+    if (server.status.toLowerCase() !== "online") {
       addLog(id, `[SYSTEM] Command ignored. Server is not online.`);
       return;
     }
 
-    setTimeout(() => {
-      const lowerCmd = cmd.toLowerCase();
-      if (lowerCmd === "help") {
-        addLog(id, `[CONSOLE] Available Commands:`);
-        addLog(id, ` - list : Show players currently online.`);
-        addLog(id, ` - op <player> : Promote player to administrator.`);
-        addLog(id, ` - deop <player> : Remove administrator status from player.`);
-        addLog(id, ` - say <msg> : Broadcast message to all players.`);
-        addLog(id, ` - stop : Safely stop the minecraft server.`);
-        addLog(id, ` - gc : Trigger Java garbage collection.`);
-      } else if (lowerCmd.startsWith("say ")) {
-        addLog(id, `[Broadcast] ${cmd.substring(4)}`);
-      } else if (lowerCmd.startsWith("op ")) {
-        addLog(id, `[CONSOLE] Made ${cmd.substring(3)} a server operator`);
-      } else if (lowerCmd.startsWith("deop ")) {
-        addLog(id, `[CONSOLE] Removed operator status from ${cmd.substring(5)}`);
-      } else if (lowerCmd === "list") {
-        addLog(id, `[CONSOLE] Currently online: 14/50 players. Active: player_one, builder2, redstone_pro.`);
-      } else if (lowerCmd === "stop") {
-        addLog(id, `[CONSOLE] Stopping the server via console command...`);
-        stopServer(id);
-      } else if (lowerCmd === "gc") {
-        addLog(id, `[CONSOLE] Performing garbage collection...`);
-        addLog(id, `[CONSOLE] Memory freed: 1,420 MB.`);
-      } else {
-        addLog(id, `[CONSOLE] Unknown command. Type "help" for a list of available commands.`);
-      }
-    }, 400);
+    if (socketRef.current) {
+      socketRef.current.emit("send-command", { serverId: id, command: cmd });
+    }
   };
 
   const getLogColor = (log: string) => {

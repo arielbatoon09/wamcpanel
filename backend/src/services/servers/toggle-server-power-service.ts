@@ -1,8 +1,9 @@
 import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
 import { NotFoundException } from "@/exceptions";
-import { ServerStatus } from "../../../generated/prisma/client";
 import { toServerResponse } from "@/utils/server-mapper";
+import { docker } from "@/lib/docker";
+import { getServerDirectory } from "@/utils/server-path";
 
 @injectable()
 export class ToggleServerPowerService {
@@ -14,32 +15,137 @@ export class ToggleServerPowerService {
       throw new NotFoundException("Server not found");
     }
 
-    let updatedStatus: ServerStatus = existing.status;
+    const containerName = `wamc-server-${id}`;
+    const container = docker.getContainer(containerName);
 
     if (action === "start") {
-      if (existing.status !== "OFFLINE") return { message: "Server is not offline", data: { server: toServerResponse(existing) } };
-      updatedStatus = "STARTING";
+      if (existing.status !== "OFFLINE") {
+        return { message: "Server is not offline", data: { server: toServerResponse(existing) } };
+      }
 
-      // Update DB to STARTING
       const server = await this.serverRepository.update(id, userId, {
         status: "STARTING",
         cpuUsage: 85,
         ramUsage: Math.floor(existing.ramLimit * 0.2),
       });
 
-      // Background transition to ONLINE after 3 seconds
-      setTimeout(async () => {
+      // Background setup and start process to avoid API timeout
+      (async () => {
         try {
+          let containerExists = false;
+          try {
+            await container.inspect();
+            containerExists = true;
+          } catch (inspectError: any) {
+            if (inspectError.statusCode !== 404) {
+              throw inspectError;
+            }
+          }
+
+          if (!containerExists) {
+            const image = "itzg/minecraft-server:latest";
+            
+            // Pull image
+            await new Promise<void>((resolve, reject) => {
+              docker.pull(image, {}, (err, stream) => {
+                if (err) return reject(err);
+                if (!stream) return reject(new Error("No stream returned from docker pull"));
+                docker.modem.followProgress(stream, (followErr) => {
+                  if (followErr) reject(followErr);
+                  else resolve();
+                });
+              });
+            });
+
+            // Create container
+            const hostDir = getServerDirectory(id);
+            const Env = [
+              "EULA=TRUE",
+              `TYPE=${existing.software.toUpperCase()}`,
+              `VERSION=${existing.version}`,
+              `ONLINE_MODE=FALSE`,
+            ];
+
+            if (existing.worldSeed) {
+              Env.push(`SEED=${existing.worldSeed}`);
+            }
+            if (existing.worldType) {
+              Env.push(`LEVEL_TYPE=${existing.worldType}`);
+            }
+            if (existing.generateStructures !== undefined) {
+              Env.push(`GENERATE_STRUCTURES=${existing.generateStructures ? "TRUE" : "FALSE"}`);
+            }
+
+            const ramGb = Math.floor(existing.ramLimit / 1024);
+            Env.push(`MEMORY=${ramGb > 0 ? `${ramGb}G` : `${existing.ramLimit}M`}`);
+
+            await docker.createContainer({
+              Image: image,
+              name: containerName,
+              Env,
+              ExposedPorts: {
+                "25565/tcp": {},
+              },
+              HostConfig: {
+                PortBindings: {
+                  "25565/tcp": [
+                    {
+                      HostPort: existing.port.toString(),
+                    },
+                  ],
+                },
+                Binds: [
+                  `${hostDir}:/data`,
+                ],
+                Memory: existing.ramLimit * 1024 * 1024,
+                NanoCpus: existing.cpuLimit * 10000000,
+              },
+            });
+          }
+
+          // Start the container
+          await container.start();
+
+          // Wait 5 seconds and update status to ONLINE
+          setTimeout(async () => {
+            try {
+              const inspectData = await container.inspect();
+              if (inspectData.State.Running) {
+                await this.serverRepository.update(id, userId, {
+                  status: "ONLINE",
+                  cpuUsage: 12.4,
+                  ramUsage: Math.floor(existing.ramLimit * 0.5),
+                  uptime: 1,
+                });
+              } else {
+                await this.serverRepository.update(id, userId, {
+                  status: "OFFLINE",
+                  cpuUsage: 0,
+                  ramUsage: 0,
+                  uptime: 0,
+                });
+              }
+            } catch (inspectErr) {
+              console.error("Failed to inspect container post-start:", inspectErr);
+              await this.serverRepository.update(id, userId, {
+                status: "OFFLINE",
+                cpuUsage: 0,
+                ramUsage: 0,
+                uptime: 0,
+              }).catch(() => {});
+            }
+          }, 5000);
+
+        } catch (backgroundError) {
+          console.error("Background server startup failed:", backgroundError);
           await this.serverRepository.update(id, userId, {
-            status: "ONLINE",
-            cpuUsage: 12.4,
-            ramUsage: Math.floor(existing.ramLimit * 0.5),
-            uptime: 1,
-          });
-        } catch (e) {
-          // Ignore if deleted during timer
+            status: "OFFLINE",
+            cpuUsage: 0,
+            ramUsage: 0,
+            uptime: 0,
+          }).catch(() => {});
         }
-      }, 3000);
+      })();
 
       return {
         message: "Server start sequence initiated",
@@ -48,17 +154,18 @@ export class ToggleServerPowerService {
     }
 
     if (action === "stop") {
-      if (existing.status !== "ONLINE") return { message: "Server is not online", data: { server: toServerResponse(existing) } };
+      if (existing.status !== "ONLINE" && existing.status !== "STARTING") {
+        return { message: "Server is not running", data: { server: toServerResponse(existing) } };
+      }
 
-      // Update DB to STOPPING
       const server = await this.serverRepository.update(id, userId, {
         status: "STOPPING",
         cpuUsage: 35,
         ramUsage: Math.floor(existing.ramLimit * 0.4),
       });
 
-      // Background transition to OFFLINE after 3 seconds
-      setTimeout(async () => {
+      // Trigger docker stop
+      container.stop().then(async () => {
         try {
           await this.serverRepository.update(id, userId, {
             status: "OFFLINE",
@@ -66,10 +173,18 @@ export class ToggleServerPowerService {
             ramUsage: 0,
             uptime: 0,
           });
-        } catch (e) {
-          // Ignore
-        }
-      }, 3000);
+        } catch (e) {}
+      }).catch(async () => {
+        // If container stop fails (e.g. already stopped), set to offline
+        try {
+          await this.serverRepository.update(id, userId, {
+            status: "OFFLINE",
+            cpuUsage: 0,
+            ramUsage: 0,
+            uptime: 0,
+          });
+        } catch (e) {}
+      });
 
       return {
         message: "Server stop sequence initiated",
@@ -78,15 +193,35 @@ export class ToggleServerPowerService {
     }
 
     if (action === "restart") {
-      // Update DB to STOPPING
       const server = await this.serverRepository.update(id, userId, {
         status: "STOPPING",
         cpuUsage: 35,
         ramUsage: Math.floor(existing.ramLimit * 0.4),
       });
 
-      // Stop then start
-      setTimeout(async () => {
+      container.restart().then(async () => {
+        try {
+          await this.serverRepository.update(id, userId, {
+            status: "STARTING",
+            cpuUsage: 85,
+            ramUsage: Math.floor(existing.ramLimit * 0.2),
+          });
+          setTimeout(async () => {
+            try {
+              const inspectData = await container.inspect();
+              if (inspectData.State.Running) {
+                await this.serverRepository.update(id, userId, {
+                  status: "ONLINE",
+                  cpuUsage: 14.8,
+                  ramUsage: Math.floor(existing.ramLimit * 0.55),
+                  uptime: 1,
+                });
+              }
+            } catch (e) {}
+          }, 5000);
+        } catch (e) {}
+      }).catch(async () => {
+        // Fallback
         try {
           await this.serverRepository.update(id, userId, {
             status: "OFFLINE",
@@ -94,27 +229,8 @@ export class ToggleServerPowerService {
             ramUsage: 0,
             uptime: 0,
           });
-
-          setTimeout(async () => {
-            await this.serverRepository.update(id, userId, {
-              status: "STARTING",
-              cpuUsage: 85,
-              ramUsage: Math.floor(existing.ramLimit * 0.2),
-            });
-
-            setTimeout(async () => {
-              await this.serverRepository.update(id, userId, {
-                status: "ONLINE",
-                cpuUsage: 14.8,
-                ramUsage: Math.floor(existing.ramLimit * 0.55),
-                uptime: 1,
-              });
-            }, 3000);
-          }, 1500);
-        } catch (e) {
-          // Ignore
-        }
-      }, 2000);
+        } catch (e) {}
+      });
 
       return {
         message: "Server restart sequence initiated",
@@ -123,7 +239,8 @@ export class ToggleServerPowerService {
     }
 
     if (action === "kill") {
-      // Immediate force stop
+      await container.kill().catch(() => {});
+
       const server = await this.serverRepository.update(id, userId, {
         status: "OFFLINE",
         cpuUsage: 0,

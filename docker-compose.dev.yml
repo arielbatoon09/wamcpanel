@@ -12,6 +12,17 @@ services:
     volumes:
       - ./backend:/builder
       - /builder/node_modules
+      - /var/run/docker.sock:/var/run/docker.sock
+    develop:
+      watch:
+        - action: sync
+          path: ./backend
+          target: /builder
+          ignore:
+            - node_modules/
+            - dist/
+        - action: rebuild
+          path: ./backend/package.json
     environment:
       - NODE_ENV=development
       - STAGE=dev
@@ -32,7 +43,18 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend
+          target: /app
+          ignore:
+            - node_modules/
+            - .next/
+        - action: rebuild
+          path: ./frontend/package.json
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_BACKEND_URL=http://localhost:${BACKEND_PORT:-8000}
       - NEXT_INTERNAL_BACKEND_URL=http://backend:8000
+      - WATCHPACK_POLLING=true
