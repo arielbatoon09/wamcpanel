@@ -55,6 +55,7 @@ services:
     restart: always
     ports:
       - '${BACKEND_PORT:-8000}:8000'
+      - '${SFTP_PORT:-2022}:2022'
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - STAGE=${STAGE:-dev}
@@ -64,6 +65,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-some_jwt_secret_key_here}
       - BACKEND_URL=${BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
+      - SFTP_PORT=${SFTP_PORT:-2022}
     depends_on:
       pg:
         condition: service_healthy

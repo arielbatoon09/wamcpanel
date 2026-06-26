@@ -12,6 +12,16 @@ const server = http.createServer(app);
 // Initialize Socket.io
 initSocketIO(server);
 
+// Initialize SFTP Server
+import { container } from "@/lib/container";
+import { SftpServerService } from "@/services/servers/sftp-server-service";
+const sftpServer = container.resolve(SftpServerService);
+sftpServer.start();
+
+import { ServerMetricsWorker } from "@/services/servers/server-metrics-worker";
+const metricsWorker = container.resolve(ServerMetricsWorker);
+metricsWorker.start();
+
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -187,24 +187,16 @@ export const useServerStore = create<ServerState>((set, get) => {
           // Uptime increment
           const nextUptime = s.metrics.uptime + 2;
 
-          // CPU variance: random float between 2% and 40% (within bounds of cpuLimit)
-          const randomCpuFactor = Math.random();
-          const targetCpu = Math.min(s.cpuLimit, Number((2 + randomCpuFactor * 35).toFixed(1)));
+          // CPU micro-variance: small fluctuation around the actual value
+          const cpuDelta = (Math.random() - 0.5) * 1.5;
+          const targetCpu = Math.min(s.cpuLimit, Math.max(0, Number((s.metrics.cpuUsage + cpuDelta).toFixed(1))));
 
-          // RAM usage variance: small changes around existing usage
-          const ramDelta = (Math.random() - 0.5) * 50; // max 25MB diff
-          const targetRam = Math.min(s.ramLimit - 100, Math.max(256, Math.floor(s.metrics.ramUsage + ramDelta)));
-
-          // Player count fluctuations occasionally
-          let targetPlayers = s.currentPlayers;
-          if (Math.random() > 0.85) {
-            const playerDelta = Math.random() > 0.5 ? 1 : -1;
-            targetPlayers = Math.min(s.maxPlayers, Math.max(0, s.currentPlayers + playerDelta));
-          }
+          // RAM micro-variance: small fluctuation around the actual value
+          const ramDelta = (Math.random() - 0.5) * 8; // max 4MB diff
+          const targetRam = Math.min(s.ramLimit, Math.max(0, Math.floor(s.metrics.ramUsage + ramDelta)));
 
           return {
             ...s,
-            currentPlayers: targetPlayers,
             metrics: {
               cpuUsage: targetCpu,
               ramUsage: targetRam,

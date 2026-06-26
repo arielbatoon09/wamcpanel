@@ -56,6 +56,12 @@ export class ServerRepository {
     });
   }
 
+  async findById(id: string): Promise<Server | null> {
+    return await this.db.server.findUnique({
+      where: { id },
+    });
+  }
+
   async update(id: string, userId: string, data: Partial<Omit<Server, "id" | "userId" | "createdAt" | "updatedAt">>): Promise<Server> {
     return await this.db.server.update({
       where: { id, userId },
