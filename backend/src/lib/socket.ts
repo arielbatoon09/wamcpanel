@@ -22,6 +22,7 @@ export function initSocketIO(server: HTTPServer) {
     let logStream: Readable | null = null;
     let currentServerId: string | null = null;
     let retryTimer: NodeJS.Timeout | null = null;
+    let lastSystemMessage: string | null = null;
 
     const cleanUpStream = () => {
       if (logStream) {
@@ -31,6 +32,14 @@ export function initSocketIO(server: HTTPServer) {
       if (retryTimer) {
         clearTimeout(retryTimer);
         retryTimer = null;
+      }
+    };
+
+    const emitSystemMessage = (serverId: string, line: string) => {
+      const msgKey = `${serverId}:${line}`;
+      if (lastSystemMessage !== msgKey) {
+        socket.emit("log-line", { serverId, line });
+        lastSystemMessage = msgKey;
       }
     };
 
@@ -66,6 +75,7 @@ export function initSocketIO(server: HTTPServer) {
 
         cleanUpStream();
         logStream = stream;
+        lastSystemMessage = null; // Reset system messages tracking on successful attach
 
         stream.on("data", (chunk: Buffer) => {
           if (currentServerId !== serverId || socket.disconnected) {
@@ -106,6 +116,29 @@ export function initSocketIO(server: HTTPServer) {
       }
     };
 
+    const pollServerStatus = async (serverId: string) => {
+      if (currentServerId !== serverId || socket.disconnected) {
+        return;
+      }
+
+      try {
+        const dbServer = await prisma.server.findUnique({
+          where: { id: serverId },
+        });
+        if (dbServer && dbServer.status !== "OFFLINE") {
+          attachLogStream(serverId);
+        } else {
+          retryTimer = setTimeout(() => {
+            pollServerStatus(serverId);
+          }, 3000);
+        }
+      } catch (err) {
+        retryTimer = setTimeout(() => {
+          pollServerStatus(serverId);
+        }, 5000);
+      }
+    };
+
     const handleStreamEnd = async (serverId: string) => {
       cleanUpStream();
       if (currentServerId !== serverId || socket.disconnected) {
@@ -117,14 +150,20 @@ export function initSocketIO(server: HTTPServer) {
           where: { id: serverId },
         });
         if (!dbServer || dbServer.status === "OFFLINE") {
-          socket.emit("log-line", { serverId, line: `[SYSTEM] Server is offline. Log stream closed.` });
+          emitSystemMessage(serverId, `[SYSTEM] Server is offline. Log stream closed.`);
+          retryTimer = setTimeout(() => {
+            pollServerStatus(serverId);
+          }, 3000);
           return;
         }
       } catch (err) {
+        retryTimer = setTimeout(() => {
+          attachLogStream(serverId);
+        }, 5000);
         return;
       }
 
-      socket.emit("log-line", { serverId, line: `[SYSTEM] Log stream ended. Waiting for container to start...` });
+      emitSystemMessage(serverId, `[SYSTEM] Log stream ended. Waiting for container to start...`);
 
       retryTimer = setTimeout(() => {
         attachLogStream(serverId);
@@ -134,6 +173,7 @@ export function initSocketIO(server: HTTPServer) {
     socket.on("subscribe-logs", async (serverId: string) => {
       console.log(`Socket ${socket.id} subscribed to logs of server ${serverId}`);
       currentServerId = serverId;
+      lastSystemMessage = null; // Reset system messages tracking on new subscription
       cleanUpStream();
       attachLogStream(serverId);
     });
