@@ -5,6 +5,7 @@ import { getServerDirectory } from "@/utils/server-path";
 import { docker } from "@/lib/docker";
 import fs from "fs";
 import path from "path";
+import { ActivityLogService } from "@/services/servers/activity-log-service";
 
 export interface PlayerInfo {
   name: string;
@@ -21,7 +22,8 @@ const stripAnsi = (text: string): string => {
 @injectable()
 export class PlayerService {
   constructor(
-    @inject(ServerRepository) private readonly serverRepository: ServerRepository
+    @inject(ServerRepository) private readonly serverRepository: ServerRepository,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
   ) { }
 
   private async verifyServerAccess(serverId: string, userId: string) {
@@ -156,11 +158,13 @@ export class PlayerService {
   public async kickPlayer(serverId: string, userId: string, player: string): Promise<void> {
     await this.verifyServerAccess(serverId, userId);
     await this.runRconCommand(serverId, `kick ${player}`);
+    await this.activityLogService.log(serverId, userId, "warning", "player", `Player "${player}" has been kicked from the server.`);
   }
 
   public async toggleOp(serverId: string, userId: string, player: string, op: boolean): Promise<void> {
     await this.verifyServerAccess(serverId, userId);
     const cmd = op ? `op ${player}` : `deop ${player}`;
     await this.runRconCommand(serverId, cmd);
+    await this.activityLogService.log(serverId, userId, "info", "player", `Operator status for "${player}" set to: ${op}`);
   }
 }

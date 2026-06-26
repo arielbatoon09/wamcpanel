@@ -6,12 +6,14 @@ import fs from "fs";
 import path from "path";
 import { Readable } from "stream";
 import AdmZip from "adm-zip";
+import { ActivityLogService } from "@/services/servers/activity-log-service";
 
 @injectable()
 export class FileService {
   constructor(
-    @inject(ServerRepository) private readonly serverRepository: ServerRepository
-  ) {}
+    @inject(ServerRepository) private readonly serverRepository: ServerRepository,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
+  ) { }
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -97,6 +99,7 @@ export class FileService {
       const dirName = path.dirname(targetPath);
       await fs.promises.mkdir(dirName, { recursive: true });
       await fs.promises.writeFile(targetPath, content, "utf8");
+      await this.activityLogService.log(serverId, userId, "info", "file", `Edited file: ${relativePath}`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to write file: ${err.message}`);
     }
@@ -126,6 +129,8 @@ export class FileService {
       } else {
         await fs.promises.writeFile(targetPath, "", "utf8");
       }
+      const itemType = isDir ? "Folder" : "File";
+      await this.activityLogService.log(serverId, userId, "info", "file", `Created ${itemType.toLowerCase()}: ${relativePath ? relativePath + "/" : ""}${name}`);
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
       throw new BadRequestException(`Failed to create item: ${err.message}`);
@@ -142,6 +147,7 @@ export class FileService {
 
     try {
       await fs.promises.rm(targetPath, { recursive: true, force: true });
+      await this.activityLogService.log(serverId, userId, "warning", "file", `Deleted: ${relativePath}`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to delete item: ${err.message}`);
     }
@@ -167,6 +173,7 @@ export class FileService {
           reject(err);
         });
       });
+      await this.activityLogService.log(serverId, userId, "info", "file", `Uploaded file: ${relativePath ? relativePath + "/" : ""}${fileName}`);
     } catch (err: any) {
       throw new BadRequestException(`Upload failed: ${err.message}`);
     }
@@ -187,6 +194,7 @@ export class FileService {
 
       const zip = new AdmZip(zipPath);
       zip.extractAllTo(targetPath, true);
+      await this.activityLogService.log(serverId, userId, "success", "file", `Extracted archive ${relativePath} to ${targetRelativePath || "/"}`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to extract archive: ${err.message}`);
     }
@@ -212,6 +220,7 @@ export class FileService {
       }
 
       zip.writeZip(targetZipPath);
+      await this.activityLogService.log(serverId, userId, "success", "file", `Compressed ${files.length} items to ${archiveName} in /${relativePath}`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to compress files: ${err.message}`);
     }
@@ -231,6 +240,7 @@ export class FileService {
         throw new BadRequestException(`Failed to delete item ${relativePath}: ${err.message}`);
       }
     }
+    await this.activityLogService.log(serverId, userId, "warning", "file", `Deleted ${relativePaths.length} items recursively.`);
   }
 
   public async rename(serverId: string, userId: string, relativePath: string, newName: string): Promise<void> {
@@ -255,6 +265,7 @@ export class FileService {
       }
 
       await fs.promises.rename(targetPath, newPath);
+      await this.activityLogService.log(serverId, userId, "info", "file", `Renamed ${relativePath} to ${newName}`);
     } catch (err: any) {
       if (err instanceof HttpException) throw err;
       throw new BadRequestException(`Failed to rename item: ${err.message}`);

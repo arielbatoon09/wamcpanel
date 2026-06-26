@@ -6,6 +6,7 @@ import fs from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
 import { Readable } from "stream";
+import { ActivityLogService } from "@/services/servers/activity-log-service";
 
 export interface PluginInfo {
   name: string;
@@ -18,8 +19,9 @@ export interface PluginInfo {
 @injectable()
 export class PluginService {
   constructor(
-    @inject(ServerRepository) private readonly serverRepository: ServerRepository
-  ) {}
+    @inject(ServerRepository) private readonly serverRepository: ServerRepository,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
+  ) { }
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -170,6 +172,8 @@ export class PluginService {
 
     try {
       await fs.promises.rename(currentPath, targetPath);
+      const actionStr = enable ? "enabled" : "disabled";
+      await this.activityLogService.log(serverId, userId, "info", "player", `Plugin "${fileName}" was ${actionStr}.`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to toggle plugin: ${err.message}`);
     }
@@ -181,6 +185,8 @@ export class PluginService {
 
     try {
       await fs.promises.unlink(targetPath);
+      const fileName = path.basename(targetPath);
+      await this.activityLogService.log(serverId, userId, "warning", "player", `Plugin "${fileName}" has been deleted/uninstalled.`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to delete plugin: ${err.message}`);
     }
@@ -210,6 +216,7 @@ export class PluginService {
           reject(err);
         });
       });
+      await this.activityLogService.log(serverId, userId, "success", "player", `Plugin file "${fileName}" was uploaded.`);
     } catch (err: any) {
       throw new BadRequestException(`Upload failed: ${err.message}`);
     }

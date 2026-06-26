@@ -1,160 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { ClipboardList, Search, X, Play, Settings2, Upload, Download, User, Shield, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { activityLogService, ActivityLogEntry } from "@/services/activity-log-service";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ActivityLevel = "info" | "success" | "warning" | "error";
 type ActivityCategory = "power" | "config" | "player" | "backup" | "system" | "file";
-
-interface ActivityEntry {
-  id: string;
-  timestamp: string;
-  level: ActivityLevel;
-  category: ActivityCategory;
-  actor: string;
-  message: string;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-// Single fixed reference for all time calculations in this module.
-// Using Date.now() anywhere during render causes SSR/client hydration mismatches.
-const MOCK_NOW = new Date("2026-06-24T12:00:00.000Z").getTime();
-
-function generateMockLogs(): ActivityEntry[] {
-  const now = MOCK_NOW;
-  const min = 60_000;
-
-  const entries: ActivityEntry[] = [
-    {
-      id: "a1",
-      timestamp: new Date(now - 2 * min).toISOString(),
-      level: "success",
-      category: "power",
-      actor: "admin",
-      message: "Server started successfully.",
-    },
-    {
-      id: "a2",
-      timestamp: new Date(now - 5 * min).toISOString(),
-      level: "info",
-      category: "player",
-      actor: "system",
-      message: "Player player_one joined the server.",
-    },
-    {
-      id: "a3",
-      timestamp: new Date(now - 8 * min).toISOString(),
-      level: "info",
-      category: "player",
-      actor: "system",
-      message: "Player builder2 joined the server.",
-    },
-    {
-      id: "a4",
-      timestamp: new Date(now - 12 * min).toISOString(),
-      level: "warning",
-      category: "system",
-      actor: "system",
-      message: "High memory usage detected: 87% of allocated RAM.",
-    },
-    {
-      id: "a5",
-      timestamp: new Date(now - 15 * min).toISOString(),
-      level: "info",
-      category: "config",
-      actor: "admin",
-      message: "server.properties updated — max-players changed from 20 to 50.",
-    },
-    {
-      id: "a6",
-      timestamp: new Date(now - 20 * min).toISOString(),
-      level: "success",
-      category: "backup",
-      actor: "system",
-      message: "Automatic backup completed (backup-20260624-120000.zip, 1.4 GB).",
-    },
-    {
-      id: "a7",
-      timestamp: new Date(now - 30 * min).toISOString(),
-      level: "info",
-      category: "file",
-      actor: "admin",
-      message: "File uploaded: plugins/EssentialsX-2.21.0.jar",
-    },
-    {
-      id: "a8",
-      timestamp: new Date(now - 35 * min).toISOString(),
-      level: "error",
-      category: "system",
-      actor: "system",
-      message: "Plugin WorldEdit failed to load — incompatible API version.",
-    },
-    {
-      id: "a9",
-      timestamp: new Date(now - 40 * min).toISOString(),
-      level: "warning",
-      category: "power",
-      actor: "admin",
-      message: "Server restart triggered manually.",
-    },
-    {
-      id: "a10",
-      timestamp: new Date(now - 45 * min).toISOString(),
-      level: "info",
-      category: "player",
-      actor: "admin",
-      message: "Player redstone_pro granted operator privileges.",
-    },
-    {
-      id: "a11",
-      timestamp: new Date(now - 60 * min).toISOString(),
-      level: "success",
-      category: "backup",
-      actor: "system",
-      message: "Backup restored successfully from backup-20260623-060000.zip.",
-    },
-    {
-      id: "a12",
-      timestamp: new Date(now - 90 * min).toISOString(),
-      level: "info",
-      category: "power",
-      actor: "admin",
-      message: "Server stopped gracefully.",
-    },
-    {
-      id: "a13",
-      timestamp: new Date(now - 120 * min).toISOString(),
-      level: "error",
-      category: "power",
-      actor: "admin",
-      message: "Kill signal sent — server was unresponsive for 60 seconds.",
-    },
-    {
-      id: "a14",
-      timestamp: new Date(now - 180 * min).toISOString(),
-      level: "info",
-      category: "file",
-      actor: "admin",
-      message: "File deleted: world/region/r.0.0.mca",
-    },
-    {
-      id: "a15",
-      timestamp: new Date(now - 240 * min).toISOString(),
-      level: "info",
-      category: "config",
-      actor: "admin",
-      message: "spigot.yml updated — view-distance changed from 10 to 8.",
-    },
-  ];
-
-  return entries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -180,8 +39,7 @@ const CATEGORY_META: Record<ActivityCategory, { label: string; icon: React.Eleme
 };
 
 function formatRelativeTime(iso: string): string {
-  // Use MOCK_NOW — not Date.now() — to stay deterministic between SSR and client.
-  const diff = MOCK_NOW - new Date(iso).getTime();
+  const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60_000);
   if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
@@ -191,23 +49,41 @@ function formatRelativeTime(iso: string): string {
 }
 
 function formatTimestamp(iso: string): string {
-  // Slice UTC time directly from the ISO string — toLocaleTimeString() produces
-  // different output on Node.js (server) vs browser, causing hydration mismatches.
-  // ISO format: "YYYY-MM-DDTHH:MM:SS.mmmZ" → chars 11–18 = "HH:MM:SS"
   return iso.substring(11, 19);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export function ServerActivityLogTab() {
+
+export function ServerActivityLogTab({ id }: { id: string }) {
+  const [allLogs, setAllLogs] = useState<ActivityLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<"all" | ActivityLevel>("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | ActivityCategory>("all");
+  const [logPage, setLogPage] = useState(1);
 
-  const allLogs = useMemo(() => generateMockLogs(), []);
+  const fetchLogs = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
+    try {
+      const data = await activityLogService.list(id);
+      setAllLogs(data);
+    } catch (err: any) {
+      toast.error("Failed to load activity logs");
+    } finally {
+      if (showLoading) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs(true);
+  }, [id]);
 
   const filteredLogs = useMemo(() => {
     return allLogs.filter((entry) => {
-      const matchesSearch = !searchQuery.trim() || entry.message.toLowerCase().includes(searchQuery.toLowerCase()) || entry.actor.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        !searchQuery.trim() ||
+        entry.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        entry.actor.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLevel = levelFilter === "all" || entry.level === levelFilter;
       const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter;
       return matchesSearch && matchesLevel && matchesCategory;
@@ -220,6 +96,7 @@ export function ServerActivityLogTab() {
     setSearchQuery("");
     setLevelFilter("all");
     setCategoryFilter("all");
+    setLogPage(1);
   };
 
   // Summary counts
@@ -233,8 +110,14 @@ export function ServerActivityLogTab() {
     [allLogs]
   );
 
+  const PAGE_SIZE = 8;
+  const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
+  const currentPage = Math.min(logPage, Math.max(1, totalPages));
+  const paginatedLogs = filteredLogs.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+
   return (
-    <div className="flex h-full animate-in flex-col gap-4 duration-300 fade-in">
+    <div className="flex h-full animate-in flex-col gap-4 duration-300 fade-in select-none">
       {/* Summary pills */}
       <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
         {(["error", "warning", "success", "info"] as ActivityLevel[]).map((lvl) => {
@@ -243,7 +126,10 @@ export function ServerActivityLogTab() {
           return (
             <button
               key={lvl}
-              onClick={() => setLevelFilter(levelFilter === lvl ? "all" : lvl)}
+              onClick={() => {
+                setLevelFilter(levelFilter === lvl ? "all" : lvl);
+                setLogPage(1);
+              }}
               className={cn(
                 "flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-left transition-all duration-150",
                 levelFilter === lvl ? meta.badgeClass + " scale-[0.98] border-current/30" : "border-border/80 bg-card/65 hover:border-border"
@@ -260,7 +146,7 @@ export function ServerActivityLogTab() {
       </div>
 
       {/* Main Log Card */}
-      <Card className="flex min-h-0 flex-1 flex-col overflow-hidden border border-border/80 bg-card/65 backdrop-blur-sm">
+      <Card className="flex min-h-[450px] flex-1 flex-col overflow-hidden border border-border/80 bg-card/65 backdrop-blur-sm">
         {/* Toolbar */}
         <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border/80 bg-secondary/20 px-4 py-3">
           <ClipboardList className="h-4 w-4 shrink-0 text-primary" />
@@ -274,18 +160,33 @@ export function ServerActivityLogTab() {
               type="text"
               placeholder="Search logs…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setLogPage(1);
+              }}
               className="min-w-0 flex-1 bg-transparent font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="cursor-pointer text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setLogPage(1);
+                }}
+                className="cursor-pointer text-muted-foreground hover:text-foreground"
+              >
                 <X className="h-3 w-3" />
               </button>
             )}
           </div>
 
           {/* Level filter */}
-          <Select value={levelFilter} onValueChange={(v) => setLevelFilter(v as "all" | ActivityLevel)}>
+          <Select
+            value={levelFilter}
+            onValueChange={(v) => {
+              setLevelFilter(v as "all" | ActivityLevel);
+              setLogPage(1);
+            }}
+          >
             <SelectTrigger className="h-8 w-[110px] border-border/60 text-xs">
               <SelectValue placeholder="Level" />
             </SelectTrigger>
@@ -299,7 +200,13 @@ export function ServerActivityLogTab() {
           </Select>
 
           {/* Category filter */}
-          <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as "all" | ActivityCategory)}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(v) => {
+              setCategoryFilter(v as "all" | ActivityCategory);
+              setLogPage(1);
+            }}
+          >
             <SelectTrigger className="h-8 w-[120px] border-border/60 text-xs">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -330,13 +237,18 @@ export function ServerActivityLogTab() {
 
         {/* Log entries */}
         <div className="flex-1 divide-y divide-border/30 overflow-y-auto">
-          {filteredLogs.length === 0 ? (
+          {loading ? (
+            <div className="flex h-48 flex-col items-center justify-center gap-2">
+              <Spinner className="h-6 w-6 text-primary" />
+              <span className="font-mono text-xs text-muted-foreground">Querying activity logs…</span>
+            </div>
+          ) : paginatedLogs.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 py-16 text-muted-foreground/40 select-none">
               <ClipboardList className="h-10 w-10" />
               <p className="text-xs">No activity found matching your filters.</p>
             </div>
           ) : (
-            filteredLogs.map((entry) => {
+            paginatedLogs.map((entry) => {
               const levelMeta = LEVEL_META[entry.level];
               const catMeta = CATEGORY_META[entry.category];
               const LevelIcon = levelMeta.icon;
@@ -375,6 +287,35 @@ export function ServerActivityLogTab() {
             })
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {!loading && (
+          <div className="mt-auto border-t border-border/80 px-4 py-3 flex shrink-0 items-center justify-between font-mono text-xs text-muted-foreground select-none">
+            <span>
+              Showing {filteredLogs.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, filteredLogs.length)} of {filteredLogs.length} events
+            </span>
+            <div className="flex gap-1.5">
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setLogPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1 || totalPages <= 1}
+                className="h-7 cursor-pointer border-border text-[10px]"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() => setLogPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages <= 1}
+                className="h-7 cursor-pointer border-border text-[10px]"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

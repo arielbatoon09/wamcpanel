@@ -3,7 +3,8 @@ import { ServerRepository } from "@/repositories/server-repository";
 import { NotFoundException, BadRequestException, HttpException } from "@/exceptions";
 import { getServerDirectory } from "@/utils/server-path";
 import { docker } from "@/lib/docker";
-import { ToggleServerPowerService } from "./toggle-server-power-service";
+import { ToggleServerPowerService } from "@/services/servers/toggle-server-power-service";
+import { ActivityLogService } from "@/services/servers/activity-log-service";
 import fs from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
@@ -22,8 +23,9 @@ export interface BackupInfo {
 export class BackupService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
-    @inject(ToggleServerPowerService) private readonly togglePowerService: ToggleServerPowerService
-  ) {}
+    @inject(ToggleServerPowerService) private readonly togglePowerService: ToggleServerPowerService,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
+  ) { }
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -59,7 +61,7 @@ export class BackupService {
       });
 
       const execStream = await exec.start({});
-      
+
       return new Promise<string>((resolve, reject) => {
         let output = "";
         execStream.on("data", (chunk: Buffer) => {
@@ -99,7 +101,7 @@ export class BackupService {
 
       for (const filename of files) {
         if (!filename.toLowerCase().endsWith(".zip")) continue;
-        
+
         const filepath = path.join(backupDir, filename);
         const stats = await fs.promises.stat(filepath);
 
@@ -148,7 +150,7 @@ export class BackupService {
     try {
       const inspectData = await container.inspect();
       isRunning = inspectData.State.Running;
-    } catch {}
+    } catch { }
 
     try {
       if (isRunning) {
@@ -161,12 +163,14 @@ export class BackupService {
       const zip = new AdmZip();
       zip.addLocalFolder(serverDir);
       zip.writeZip(targetZipPath);
+
+      await this.activityLogService.log(serverId, userId, "success", "backup", `Backup created: ${filename}`);
     } catch (err: any) {
       throw new BadRequestException(`Failed to create backup: ${err.message}`);
     } finally {
       if (isRunning) {
         // Re-enable save
-        await this.runRconCommand(serverId, "save-on").catch(() => {});
+        await this.runRconCommand(serverId, "save-on").catch(() => { });
       }
     }
   }
@@ -184,6 +188,7 @@ export class BackupService {
     try {
       if (fs.existsSync(filepath)) {
         await fs.promises.unlink(filepath);
+        await this.activityLogService.log(serverId, userId, "warning", "backup", `Backup deleted: ${filename}`);
       } else {
         throw new NotFoundException("Backup file not found");
       }
@@ -213,7 +218,7 @@ export class BackupService {
   public async upload(serverId: string, userId: string, filename: string, stream: Readable): Promise<void> {
     await this.verifyServerAccess(serverId, userId);
     const backupDir = this.getBackupDirectory(serverId);
-    
+
     // Ensure filename ends with .zip
     const cleanName = filename.toLowerCase().endsWith(".zip") ? filename : `${filename}.zip`;
     const targetPath = path.join(backupDir, cleanName);
@@ -232,6 +237,7 @@ export class BackupService {
           reject(err);
         });
       });
+      await this.activityLogService.log(serverId, userId, "success", "backup", `Backup archive uploaded: ${cleanName}`);
     } catch (err: any) {
       throw new BadRequestException(`Upload failed: ${err.message}`);
     }
@@ -249,7 +255,7 @@ export class BackupService {
 
     const containerName = `wamc-server-${serverId}`;
     const container = docker.getContainer(containerName);
-    
+
     let wasRunning = false;
     try {
       const inspectData = await container.inspect();
@@ -265,7 +271,7 @@ export class BackupService {
           uptime: 0,
         });
       }
-    } catch {}
+    } catch { }
 
     try {
       // Clear server directory
@@ -278,6 +284,8 @@ export class BackupService {
       // Extract backup
       const zip = new AdmZip(zipPath);
       zip.extractAllTo(serverDir, true);
+
+      await this.activityLogService.log(serverId, userId, "success", "backup", `Backup restored: ${filename}`);
 
       // Start server again if it was running
       if (wasRunning) {

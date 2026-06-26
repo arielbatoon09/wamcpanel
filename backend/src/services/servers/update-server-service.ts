@@ -3,10 +3,14 @@ import { ServerRepository } from "@/repositories/server-repository";
 import { NotFoundException } from "@/exceptions";
 import { toServerResponse } from "@/utils/server-mapper";
 import { writeServerProperties, readServerProperties } from "@/utils/server-properties";
+import { ActivityLogService } from "@/services/servers/activity-log-service";
 
 @injectable()
 export class UpdateServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
+  constructor(
+    @inject(ServerRepository) private readonly serverRepository: ServerRepository,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
+  ) { }
 
   public async execute(
     id: string,
@@ -34,6 +38,8 @@ export class UpdateServerService {
 
     const updated = await this.serverRepository.update(id, userId, dbData);
     const updatedSettings = await readServerProperties(id);
+
+    await this.activityLogService.log(id, userId, "info", "config", "Server settings and configuration updated.");
 
     return {
       message: "Server updated successfully",

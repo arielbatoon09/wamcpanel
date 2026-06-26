@@ -5,10 +5,14 @@ import { toServerResponse } from "@/utils/server-mapper";
 import { docker } from "@/lib/docker";
 import { getServerDirectory } from "@/utils/server-path";
 import { readServerProperties } from "@/utils/server-properties";
+import { ActivityLogService } from "./activity-log-service";
 
 @injectable()
 export class ToggleServerPowerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
+  constructor(
+    @inject(ServerRepository) private readonly serverRepository: ServerRepository,
+    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
+  ) { }
 
   public async execute(id: string, userId: string, action: "start" | "stop" | "restart" | "kill") {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
@@ -29,6 +33,8 @@ export class ToggleServerPowerService {
         cpuUsage: 85,
         ramUsage: Math.floor(existing.ramLimit * 0.2),
       });
+
+      await this.activityLogService.log(id, userId, "success", "power", "Server start sequence initiated.");
 
       // Background setup and start process to avoid API timeout
       (async () => {
@@ -178,6 +184,8 @@ export class ToggleServerPowerService {
         ramUsage: Math.floor(existing.ramLimit * 0.4),
       });
 
+      await this.activityLogService.log(id, userId, "info", "power", "Server stop sequence initiated.");
+
       // Trigger docker stop
       container.stop().then(async () => {
         try {
@@ -212,6 +220,8 @@ export class ToggleServerPowerService {
         cpuUsage: 35,
         ramUsage: Math.floor(existing.ramLimit * 0.4),
       });
+
+      await this.activityLogService.log(id, userId, "warning", "power", "Server restart triggered manually.");
 
       (async () => {
         try {
@@ -251,6 +261,8 @@ export class ToggleServerPowerService {
         ramUsage: 0,
         uptime: 0,
       });
+
+      await this.activityLogService.log(id, userId, "error", "power", "Kill signal sent — server terminated.");
 
       return {
         message: "Server killed successfully",

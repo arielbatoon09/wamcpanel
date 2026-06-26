@@ -5,6 +5,7 @@ import { FileController } from "@/controllers/file-controller";
 import { PlayerController } from "@/controllers/player-controller";
 import { PluginController } from "@/controllers/plugin-controller";
 import { BackupController } from "@/controllers/backup-controller";
+import { ActivityLogController } from "@/controllers/activity-log-controller";
 import { SchemaMiddleware, AuthMiddleware } from "@/middlewares";
 import { createServerSchema, updateServerSchema, toggleServerPowerSchema } from "@/schemas/server-schemas";
 import { createFileSchema, writeFileSchema, extractZipSchema, compressSchema, deleteBulkSchema, renameFileSchema } from "@/schemas/file-schemas";
@@ -17,6 +18,7 @@ const fileController = container.resolve(FileController);
 const playerController = container.resolve(PlayerController);
 const pluginController = container.resolve(PluginController);
 const backupController = container.resolve(BackupController);
+const activityLogController = container.resolve(ActivityLogController);
 
 // Apply AuthMiddleware globally to all server routes
 router.use(AuthMiddleware.execute);
@@ -60,5 +62,8 @@ router.post("/v1/:id/backups/upload", backupController.upload);
 router.post("/v1/:id/backups/:filename/restore", backupController.restore);
 router.get("/v1/:id/backups/:filename/download", backupController.download);
 router.delete("/v1/:id/backups/:filename", backupController.delete);
+
+// Activity Log routes
+router.get("/v1/:id/activity-logs", activityLogController.list);
 
 export default router;
