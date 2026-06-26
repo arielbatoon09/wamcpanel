@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { fileService, FileItem } from "@/services/file-service";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FileEditor } from "@/components/features/servers/detail/file-editor";
 import {
   ContextMenu,
@@ -53,6 +54,10 @@ import {
 export function ServerFilesTab({ id }: { id: string }) {
   const { addLog } = useServerStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const editParam = searchParams.get("edit");
 
   // Navigation & States
   const [currentPath, setCurrentPath] = useState("");
@@ -133,6 +138,13 @@ export function ServerFilesTab({ id }: { id: string }) {
     setSelectedFiles(new Set());
   }, [currentPath]);
 
+  // Open editor if edit query parameter is present
+  useEffect(() => {
+    if (editParam) {
+      setEditingFilePath(editParam);
+    }
+  }, [editParam]);
+
   if (editingFilePath) {
     return (
       <FileEditor
@@ -140,6 +152,8 @@ export function ServerFilesTab({ id }: { id: string }) {
         filePath={editingFilePath}
         onClose={() => {
           setEditingFilePath(null);
+          // Remove edit parameter from URL
+          router.replace(pathname);
           fetchFiles();
         }}
       />
@@ -549,10 +563,20 @@ export function ServerFilesTab({ id }: { id: string }) {
             variant="outline"
             size="sm"
             onClick={handleUploadButtonClick}
+            disabled={Object.keys(uploadProgress).length > 0}
             className="h-8 text-xs font-semibold cursor-pointer gap-1"
           >
-            <UploadCloud className="h-3.5 w-3.5" />
-            Upload
+            {Object.keys(uploadProgress).length > 0 ? (
+              <>
+                <Spinner className="h-3 w-3" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <UploadCloud className="h-3.5 w-3.5" />
+                Upload
+              </>
+            )}
           </Button>
           <Button
             variant="outline"
@@ -583,6 +607,7 @@ export function ServerFilesTab({ id }: { id: string }) {
             ref={fileInputRef}
             onChange={handleFileChange}
             multiple
+            disabled={Object.keys(uploadProgress).length > 0}
             className="hidden"
           />
         </div>

@@ -18,11 +18,12 @@ export function ServerSettingsTab({ id }: { id: string }) {
   const router = useRouter();
   const { servers, deleteServer, updateServer, addLog } = useServerStore();
   const server = servers.find((s) => s.id === id);
+  const initialSettings = server?.settings || {};
 
   // Gameplay States
   const [gameMode, setGameMode] = useState<string>("Survival");
   const [difficulty, setDifficulty] = useState<string>("Easy");
-  const [motd, setMotd] = useState<string>(server?.description || "A Minecraft Server");
+  const [motd, setMotd] = useState<string>(initialSettings.motd || server?.description || "A Minecraft Server");
   const [pvp, setPvp] = useState<boolean>(true);
   const [allowFlight, setAllowFlight] = useState<boolean>(false);
   const [commandBlocks, setCommandBlocks] = useState<boolean>(false);
@@ -30,7 +31,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
   const [squidServers, setSquidServers] = useState<boolean>(false);
 
   // Performance States
-  const [maxPlayers, setMaxPlayers] = useState<string>(String(server?.maxPlayers || 20));
+  const [maxPlayers, setMaxPlayers] = useState<string>(initialSettings["max-players"] || String(server?.maxPlayers || 20));
   const [viewDistance, setViewDistance] = useState<string>("10");
   const [simDistance, setSimDistance] = useState<string>("8");
   const [ramAllocation, setRamAllocation] = useState<number>(server?.ramLimit || 4096);
@@ -52,18 +53,58 @@ export function ServerSettingsTab({ id }: { id: string }) {
   // Track loaded server to only initialize once
   const [loadedServerId, setLoadedServerId] = useState<string | null>(null);
 
-  // Sync state from server on mount/change
+  const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+  const settings = server?.settings || {};
+
+  const originalGameMode = caps(settings.gamemode) || "Survival";
+  const originalDifficulty = caps(settings.difficulty) || "Easy";
+  const originalMotd = settings.motd || server?.description || "A Minecraft Server";
+  const originalPvp = settings.pvp !== undefined ? settings.pvp === "true" : true;
+  const originalAllowFlight = settings["allow-flight"] === "true";
+  const originalCommandBlocks = settings["enable-command-block"] === "true";
+  const originalHardcore = settings.hardcore === "true";
+  const originalMaxPlayers = settings["max-players"] || String(server?.maxPlayers || 20);
+  const originalViewDistance = settings["view-distance"] || "10";
+  const originalSimDistance = settings["simulation-distance"] || "8";
+  const originalRamAllocation = server?.ramLimit || 4096;
+  const originalSpawnProtection = settings["spawn-protection"] || "16";
+  const originalWhitelist = settings["white-list"] === "true";
+  const originalEnforceWhitelist = settings["enforce-whitelist"] === "true";
+  const originalOnlineMode = settings["online-mode"] !== undefined ? settings["online-mode"] === "true" : true;
+  const originalJavaVersion = server?.javaVersion || "21";
+  const originalMcVersion = server?.version || "1.21.11";
+
+  const hasChanges =
+    gameMode !== originalGameMode ||
+    difficulty !== originalDifficulty ||
+    motd !== originalMotd ||
+    pvp !== originalPvp ||
+    allowFlight !== originalAllowFlight ||
+    commandBlocks !== originalCommandBlocks ||
+    hardcore !== originalHardcore ||
+    maxPlayers !== originalMaxPlayers ||
+    viewDistance !== originalViewDistance ||
+    simDistance !== originalSimDistance ||
+    ramAllocation !== originalRamAllocation ||
+    spawnProtection !== originalSpawnProtection ||
+    whitelist !== originalWhitelist ||
+    enforceWhitelist !== originalEnforceWhitelist ||
+    onlineMode !== originalOnlineMode ||
+    javaVersion !== originalJavaVersion ||
+    mcVersion !== originalMcVersion;
+
+  // Sync state from server on mount/change or when server updates and there are no local edits
   useEffect(() => {
-    if (server && loadedServerId !== server.id) {
+    if (server && (loadedServerId !== server.id || !hasChanges)) {
+      const settings = server.settings || {};
       setLoadedServerId(server.id);
-      setMotd(server.description || "A Minecraft Server");
-      setMaxPlayers(String(server.maxPlayers || 20));
+      setMotd(settings.motd || server.description || "A Minecraft Server");
+      setMaxPlayers(settings["max-players"] || String(server.maxPlayers || 20));
       setRamAllocation(server.ramLimit || 4096);
       setJavaVersion(server.javaVersion || "21");
       setMcVersion(server.version || "1.21.11");
 
       const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
-      const settings = server.settings || {};
 
       setGameMode(caps(settings.gamemode) || "Survival");
       setDifficulty(caps(settings.difficulty) || "Easy");
@@ -80,10 +121,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
       setEnforceWhitelist(settings["enforce-whitelist"] === "true");
       setOnlineMode(settings["online-mode"] !== undefined ? settings["online-mode"] === "true" : true);
     }
-  }, [server, loadedServerId]);
-
-  // raw server.properties Dialog State
-  const [propertiesOpen, setPropertiesOpen] = useState(false);
+  }, [server, loadedServerId, hasChanges]);
 
   if (!server) return null;
 
@@ -96,6 +134,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
       version: mcVersion,
       settings: {
         motd: motd,
+        "max-players": maxPlayers,
         gamemode: gameMode.toLowerCase(),
         difficulty: difficulty.toLowerCase(),
         pvp: String(pvp),
@@ -130,10 +169,23 @@ export function ServerSettingsTab({ id }: { id: string }) {
           <p className="text-xs text-muted-foreground">Configure your Minecraft server properties</p>
         </div>
         <div className="flex w-full gap-2 sm:w-auto">
-          <Button type="button" variant="outline" size="sm" onClick={() => setPropertiesOpen(true)} className="h-9 flex-1 cursor-pointer gap-1.5 border-border text-xs sm:flex-none">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/server/${id}/files?edit=server.properties`)}
+            className="h-9 flex-1 cursor-pointer gap-1.5 border-border text-xs sm:flex-none"
+          >
             <FileCode className="h-4 w-4" /> Open server.properties
           </Button>
-          <Button type="button" size="sm" onClick={handleSaveProperties} className="h-9 flex-1 cursor-pointer gap-1.5 text-xs font-semibold sm:flex-none">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSaveProperties}
+            disabled={!hasChanges}
+            className={`h-9 flex-1 gap-1.5 text-xs font-semibold sm:flex-none ${hasChanges ? "cursor-pointer" : "cursor-not-allowed opacity-60"
+              }`}
+          >
             <CheckCircle2 className="h-4 w-4" /> Save Changes
           </Button>
         </div>
@@ -624,46 +676,6 @@ export function ServerSettingsTab({ id }: { id: string }) {
           Warning: This action cannot be undone. All server files, configurations, worlds, and associated tunnels will be permanently deleted.
         </div>
       </Card>
-
-      {/* Raw server.properties Dialog View */}
-      <Dialog open={propertiesOpen} onOpenChange={setPropertiesOpen}>
-        <DialogContent className="max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-sm">server.properties</DialogTitle>
-            <DialogDescription>Raw properties config representation of this server instance.</DialogDescription>
-          </DialogHeader>
-
-          <div className="max-h-[350px] space-y-1 overflow-y-auto rounded-lg bg-black/95 p-4 font-mono text-xs text-zinc-300">
-            <div># Minecraft server properties</div>
-            <div># Generated and managed by Panel</div>
-            <div>generator-settings=</div>
-            <div>op-permission-level=4</div>
-            <div>allow-nether=true</div>
-            <div>level-name=world</div>
-            <div>enable-query=false</div>
-            <div>allow-flight={String(allowFlight)}</div>
-            <div>announce-player-achievements=true</div>
-            <div>server-port={server.port}</div>
-            <div>max-players={maxPlayers}</div>
-            <div>difficulty={difficulty.toLowerCase()}</div>
-            <div>spawn-monsters=true</div>
-            <div>pvp={String(pvp)}</div>
-            <div>hardcore={String(hardcore)}</div>
-            <div>enable-command-block={String(commandBlocks)}</div>
-            <div>gamemode={gameMode.toLowerCase()}</div>
-            <div>online-mode={String(onlineMode)}</div>
-            <div>view-distance={viewDistance}</div>
-            <div>simulation-distance={simDistance}</div>
-            <div>motd={motd}</div>
-          </div>
-
-          <div className="flex justify-end border-t border-border pt-4">
-            <Button onClick={() => setPropertiesOpen(false)} size="sm">
-              Close Editor
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

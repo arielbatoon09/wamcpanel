@@ -2,13 +2,19 @@ import { Router } from "express";
 import { container } from "@/lib/container";
 import { ServerController } from "@/controllers/server-controller";
 import { FileController } from "@/controllers/file-controller";
+import { PlayerController } from "@/controllers/player-controller";
+import { PluginController } from "@/controllers/plugin-controller";
 import { SchemaMiddleware, AuthMiddleware } from "@/middlewares";
 import { createServerSchema, updateServerSchema, toggleServerPowerSchema } from "@/schemas/server-schemas";
 import { createFileSchema, writeFileSchema, extractZipSchema, compressSchema, deleteBulkSchema, renameFileSchema } from "@/schemas/file-schemas";
+import { kickPlayerSchema, toggleOpSchema } from "@/schemas/player-schemas";
+import { togglePluginSchema, deletePluginSchema } from "@/schemas/plugin-schemas";
 
 const router = Router();
 const serverController = container.resolve(ServerController);
 const fileController = container.resolve(FileController);
+const playerController = container.resolve(PlayerController);
+const pluginController = container.resolve(PluginController);
 
 // Apply AuthMiddleware globally to all server routes
 router.use(AuthMiddleware.execute);
@@ -33,5 +39,16 @@ router.post("/v1/:id/files/compress", SchemaMiddleware.validate(compressSchema),
 router.post("/v1/:id/files/delete-bulk", SchemaMiddleware.validate(deleteBulkSchema), fileController.deleteBulk);
 router.post("/v1/:id/files/rename", SchemaMiddleware.validate(renameFileSchema), fileController.rename);
 router.delete("/v1/:id/files", fileController.delete);
+
+// Player routes
+router.get("/v1/:id/players", playerController.list);
+router.post("/v1/:id/players/kick", SchemaMiddleware.validate(kickPlayerSchema), playerController.kick);
+router.post("/v1/:id/players/op", SchemaMiddleware.validate(toggleOpSchema), playerController.toggleOp);
+
+// Plugin routes
+router.get("/v1/:id/plugins", pluginController.list);
+router.post("/v1/:id/plugins/toggle", SchemaMiddleware.validate(togglePluginSchema), pluginController.toggle);
+router.post("/v1/:id/plugins/upload", pluginController.upload);
+router.delete("/v1/:id/plugins", SchemaMiddleware.validate(deletePluginSchema), pluginController.delete);
 
 export default router;
