@@ -76,7 +76,7 @@ export function ServerOverviewTab({ id }: { id: string }) {
           <div className="shrink-0">
             <h4 className="mb-2 border-b border-border/40 pb-1 font-mono text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">Node & Host Specs</h4>
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-              <div className="group relative rounded-lg border border-border/40 bg-secondary/30 p-2.5 text-right">
+              <div className="group relative rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Server Connection (IP:Port)</span>
                 <span className="block truncate pr-6 font-bold text-foreground">
                   {displayHost}:{server.port}
