@@ -183,14 +183,13 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
                 <div className="py-6 text-center text-[11px] text-muted-foreground italic">No players online.</div>
               ) : (
                 onlinePlayers.map((player) => (
-                  <div key={player.name} className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
+                  <div key={player.name} className="flex items-center rounded-lg border border-border/20 bg-secondary/15 p-2">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="font-semibold text-foreground/80 truncate max-w-[120px]">
+                      <span className="font-semibold text-foreground/80 truncate max-w-[200px]">
                         {player.name.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">Ping: {player.ping}</span>
                   </div>
                 ))
               )

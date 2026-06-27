@@ -164,7 +164,6 @@ export function ServerPlayersTab({ id }: { id: string }) {
                   <th className="py-2 font-semibold">Player</th>
                   <th className="py-2 font-semibold">UUID</th>
                   <th className="py-2 font-semibold">IP Address</th>
-                  <th className="py-2 font-semibold">Ping</th>
                   <th className="py-2 text-right font-semibold">Actions</th>
                 </tr>
               </thead>
@@ -190,7 +189,6 @@ export function ServerPlayersTab({ id }: { id: string }) {
                         {player.uuid}
                       </td>
                       <td className="py-2.5 text-muted-foreground">{player.ip}</td>
-                      <td className="py-2.5 font-bold text-emerald-400">{player.ping}</td>
                       <td className="py-2.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
