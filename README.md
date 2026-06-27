@@ -21,7 +21,7 @@ To deploy WAMCPanel on any VPS (Ubuntu/Debian) automatically:
 Run our automated bootstrap script on your hosting server to install Docker, Node.js, Git, and configure group permissions:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/arielbatoon09/wamcpanel/main/scripts/installation.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/scripts/installation.sh | sudo bash
 ```
 
 ### 2. Configure Environment variables
