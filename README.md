@@ -1,4 +1,4 @@
-# WAMCPanel 🎮🕹️
+# WAMCPanel (Minecraft Server Panel)
 
 WAMCPanel (Web-based Minecraft Control Panel) is a modern, state-of-the-art server administration dashboard. It allows you to host, manage, monitor, and configure multiple Minecraft server instances dynamically via Docker containers. Built with Next.js, Express, Prisma, and Dockerode.
 
