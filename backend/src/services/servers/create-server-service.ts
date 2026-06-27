@@ -6,7 +6,7 @@ import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class CreateServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
 
   public async execute(
     userId: string,
@@ -25,6 +25,12 @@ export class CreateServerService {
       generateStructures?: boolean;
     }
   ) {
+    // Prevent duplicate server names
+    const nameInUse = await this.serverRepository.findByName(data.name);
+    if (nameInUse) {
+      throw new BadRequestException(`Server name "${data.name}" is already in use. Please choose a unique name.`);
+    }
+
     // Prevent duplicate port bindings across all servers
     const portInUse = await this.serverRepository.findByPort(data.port);
     if (portInUse) {

@@ -84,7 +84,7 @@ export class ServerMetricsWorker {
               status = ServerStatus.ONLINE;
             }
 
-            const canRunRcon = !isVelocity && status === ServerStatus.ONLINE;
+            const canRunRcon = !isVelocity && (status === ServerStatus.ONLINE || status === ServerStatus.STARTING);
 
             if (canRunRcon) {
               try {

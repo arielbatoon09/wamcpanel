@@ -2,7 +2,7 @@ import { injectable, inject } from "tsyringe";
 import type { Request, Response } from "express";
 import { BaseController } from "@/controllers/base-controller";
 import { AsyncController } from "@/lib/decorators";
-import { OnboardingStatusService, SignupService, LoginWithEmailService, RefreshTokenService, LogoutService } from "@/services/auth";
+import { OnboardingStatusService, SignupService, LoginWithEmailService, RefreshTokenService, LogoutService, UpdateProfileService } from "@/services/auth";
 import { UserRepository } from "@/repositories/user-repository";
 import { setAuthCookies, clearAuthCookies } from "@/utils/cookie";
 
@@ -14,6 +14,7 @@ export class AuthController extends BaseController {
     @inject(LoginWithEmailService) private readonly loginService: LoginWithEmailService,
     @inject(RefreshTokenService) private readonly refreshTokenService: RefreshTokenService,
     @inject(LogoutService) private readonly logoutService: LogoutService,
+    @inject(UpdateProfileService) private readonly updateProfileService: UpdateProfileService,
     @inject(UserRepository) private readonly userRepository: UserRepository
   ) {
     super();
@@ -97,5 +98,13 @@ export class AuthController extends BaseController {
     }
 
     return this.ok(res, undefined, result.message);
+  }
+
+  @AsyncController()
+  async updateProfile(req: Request, res: Response) {
+    const userId = (req as any).user?.sub;
+    const { name, currentPassword, newPassword } = req.body ?? {};
+    const result = await this.updateProfileService.execute(userId, { name, currentPassword, newPassword });
+    return this.ok(res, result.data, result.message);
   }
 }

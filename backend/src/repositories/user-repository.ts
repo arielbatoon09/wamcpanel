@@ -52,4 +52,17 @@ export class UserRepository {
       select: { id: true, email: true },
     });
   }
+
+  async updateProfile(userId: string, data: { name?: string }) {
+    return await this.db.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      },
+    });
+  }
 }

@@ -65,10 +65,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: "starting",
-                metrics: { ...s.metrics, cpuUsage: 85, ramUsage: Math.floor(s.ramLimit * 0.2) },
-              }
+              ...s,
+              status: "starting",
+              metrics: { ...s.metrics, cpuUsage: 85, ramUsage: Math.floor(s.ramLimit * 0.2) },
+            }
             : s
         ),
       }));
@@ -86,10 +86,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: "stopping",
-                metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
-              }
+              ...s,
+              status: "stopping",
+              metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
+            }
             : s
         ),
       }));
@@ -107,10 +107,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: "stopping",
-                metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
-              }
+              ...s,
+              status: "stopping",
+              metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
+            }
             : s
         ),
       }));
@@ -123,11 +123,11 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-                ...s,
-                status: "offline",
-                currentPlayers: 0,
-                metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
-              }
+              ...s,
+              status: "offline",
+              currentPlayers: 0,
+              metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
+            }
             : s
         ),
       }));
@@ -140,16 +140,8 @@ export const useServerStore = create<ServerState>((set, get) => {
 
     deleteServer: (id) => {
       set((state) => ({
-        deletingIds: [...state.deletingIds, id],
         servers: state.servers.filter((s) => s.id !== id),
       }));
-      serverService.delete(id)
-        .catch(console.error)
-        .finally(() => {
-          set((state) => ({
-            deletingIds: state.deletingIds.filter((x) => x !== id),
-          }));
-        });
     },
 
     updateServer: (id, updates) => {

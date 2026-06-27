@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { useRouter } from "next/navigation";
-import { useDeleteServer } from "@/services/server-service";
+import { useDeleteServer, useMinecraftVersions } from "@/services/server-service";
+import { VersionPicker, recommendedJava, isJavaLocked, javaLabel } from "@/components/features/settings/version-picker";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,18 @@ import { Slider } from "@/components/ui/slider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Gamepad2, HelpCircle, Gauge, AlertTriangle, Lock, Cpu, Settings2, Trash2, FileCode, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function ServerSettingsTab({ id }: { id: string }) {
   const router = useRouter();
@@ -21,6 +32,8 @@ export function ServerSettingsTab({ id }: { id: string }) {
   const deleteMutation = useDeleteServer();
   const server = servers.find((s) => s.id === id);
   const initialSettings = server?.settings || {};
+
+  const { data: versionsList = [], isLoading: versionsLoading } = useMinecraftVersions();
 
   // Gameplay States
   const [gameMode, setGameMode] = useState<string>("Survival");
@@ -51,9 +64,14 @@ export function ServerSettingsTab({ id }: { id: string }) {
 
   // Version States
   const [mcVersion, setMcVersion] = useState<string>("1.21.11");
+  const javaLocked = isJavaLocked(mcVersion);
 
   // Track loaded server to only initialize once
   const [loadedServerId, setLoadedServerId] = useState<string | null>(null);
+
+  // Delete Confirmation States
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
 
   const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
   const settings = server?.settings || {};
@@ -156,24 +174,24 @@ export function ServerSettingsTab({ id }: { id: string }) {
   };
 
   const handleDeleteServer = () => {
-    if (confirm(`Are you sure you want to delete ${server.name}?`)) {
-      deleteMutation.mutate(id, {
-        onSuccess: () => {
-          deleteServer(id);
-          router.push("/servers");
-          toast.success("Server deleted successfully");
-        },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || "Failed to delete server");
-        },
-      });
-    }
+    deleteMutation.mutate({ id, name: confirmName }, {
+      onSuccess: () => {
+        deleteServer(id);
+        setIsDeleteDialogOpen(false);
+        setConfirmName("");
+        router.push("/servers");
+        toast.success("Server deleted successfully");
+      },
+      onError: (err: any) => {
+        toast.error(err.response?.data?.message || err.message || "Failed to delete server");
+      },
+    });
   };
 
   return (
     <div className="h-auto animate-in space-y-6 pr-1 duration-300 fade-in lg:h-full lg:overflow-y-auto">
       {/* Header with Save Actions */}
-      <div className="flex flex-col items-start justify-between gap-4 border-b border-border pb-4 sm:flex-row sm:items-center">
+      <div className="sticky top-0 z-20 flex flex-col items-start justify-between gap-4 border-b border-border bg-background/95 backdrop-blur-md pb-4 pt-1 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground">Server Settings</h2>
           <p className="text-xs text-muted-foreground">Configure your Minecraft server properties</p>
@@ -561,6 +579,11 @@ export function ServerSettingsTab({ id }: { id: string }) {
                 <div className="space-y-1.5">
                   <span className="flex items-center gap-1 font-semibold text-muted-foreground">
                     Java Executable
+                    {mcVersion && (
+                      <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary normal-case">
+                        Recommended: {javaLabel(recommendedJava(mcVersion))}
+                      </span>
+                    )}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground/60" />
@@ -568,22 +591,27 @@ export function ServerSettingsTab({ id }: { id: string }) {
                       <TooltipContent>Java VM runtime used to execute the Jar platform.</TooltipContent>
                     </Tooltip>
                   </span>
-                  <Select value={javaVersion} onValueChange={setJavaVersion}>
-                    <SelectTrigger className="cursor-pointer">
+                  <Select value={javaVersion} onValueChange={setJavaVersion} disabled={javaLocked}>
+                    <SelectTrigger className={cn("cursor-pointer", javaLocked && "opacity-60 cursor-not-allowed")}>
                       <SelectValue placeholder="Java Runtime" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="21" className="cursor-pointer">
+                      <SelectItem value="21" disabled={javaLocked} className="cursor-pointer">
                         Java 21 (Paper Standard)
                       </SelectItem>
-                      <SelectItem value="17" className="cursor-pointer">
+                      <SelectItem value="17" disabled={javaLocked} className="cursor-pointer">
                         Java 17 (Legacy Support)
                       </SelectItem>
                       <SelectItem value="25" className="cursor-pointer">
-                        Java 25 (Experimental)
+                        Java 25 (Latest)
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  {javaLocked && (
+                    <p className="text-[11px] text-amber-500 font-sans mt-1">
+                      ⚠ Java 25 is required for Minecraft {mcVersion}+ and cannot be changed.
+                    </p>
+                  )}
                 </div>
 
 
@@ -619,7 +647,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
           </Card>
 
           {/* Server Version Selection Card */}
-          <Card className="space-y-4 border border-border bg-card/65 p-5">
+          <Card className="overflow-visible space-y-4 border border-border bg-card/65 p-5">
             <div className="flex items-center gap-2.5 border-b border-border/40 pb-2">
               <div className="rounded-lg bg-secondary p-1.5 text-primary">
                 <Settings2 className="h-4.5 w-4.5" />
@@ -640,25 +668,15 @@ export function ServerSettingsTab({ id }: { id: string }) {
                   <TooltipContent>Updates the target Minecraft installation version.</TooltipContent>
                 </Tooltip>
               </span>
-              <Select value={mcVersion} onValueChange={setMcVersion}>
-                <SelectTrigger className="cursor-pointer">
-                  <SelectValue placeholder="Minecraft Version" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1.21.11" className="cursor-pointer">
-                    1.21.11
-                  </SelectItem>
-                  <SelectItem value="1.20.4" className="cursor-pointer">
-                    1.20.4
-                  </SelectItem>
-                  <SelectItem value="1.20.2" className="cursor-pointer">
-                    1.20.2
-                  </SelectItem>
-                  <SelectItem value="1.19.4" className="cursor-pointer">
-                    1.19.4
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <VersionPicker
+                versions={versionsList}
+                value={mcVersion}
+                onChange={(v) => {
+                  setMcVersion(v);
+                  setJavaVersion(recommendedJava(v));
+                }}
+                isLoading={versionsLoading}
+              />
             </div>
           </Card>
         </div>
@@ -673,7 +691,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
             </h3>
             <p className="text-xs text-muted-foreground">Permanently delete this server and all its files</p>
           </div>
-          <Button variant="destructive" onClick={handleDeleteServer} className="cursor-pointer bg-red-600 text-xs font-semibold text-white hover:bg-red-700">
+          <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)} className="cursor-pointer bg-red-600 text-xs font-semibold text-white hover:bg-red-700">
             <Trash2 className="mr-1 h-4 w-4" /> Delete Server
           </Button>
         </div>
@@ -686,6 +704,47 @@ export function ServerSettingsTab({ id }: { id: string }) {
           Warning: This action cannot be undone. All server files, configurations, worlds, and associated tunnels will be permanently deleted.
         </div>
       </Card>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+        setIsDeleteDialogOpen(open);
+        if (!open) setConfirmName("");
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" /> Are you absolutely sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left">
+              This action <strong>cannot</strong> be undone. This will permanently delete the server <strong>{server.name}</strong>, all its files, worlds, configs, and metrics.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 mt-2">
+            <label className="text-xs font-semibold text-muted-foreground block">
+              Please type <span className="font-mono text-foreground font-bold">{server.name}</span> to confirm.
+            </label>
+            <Input
+              placeholder="Type server name"
+              value={confirmName}
+              onChange={(e) => setConfirmName(e.target.value)}
+              className="font-mono text-sm"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteServer}
+              disabled={confirmName !== server.name || deleteMutation.isPending}
+              className={cn(
+                "bg-red-600 text-white hover:bg-red-700 font-semibold cursor-pointer",
+                (confirmName !== server.name || deleteMutation.isPending) && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Server"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

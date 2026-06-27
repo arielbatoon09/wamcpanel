@@ -79,7 +79,8 @@ export class ServerController extends BaseController {
   async delete(req: Request, res: Response) {
     const userId = (req as any).user?.sub;
     const { id } = req.params as { id: string };
-    const result = await this.deleteServerService.execute(id, userId);
+    const name = req.query.name as string | undefined;
+    const result = await this.deleteServerService.execute(id, userId, name);
     return this.ok(res, undefined, result.message);
   }
 

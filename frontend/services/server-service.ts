@@ -39,8 +39,10 @@ export const serverService = {
     return response.data.data.server;
   },
 
-  delete: async (id: string): Promise<any> => {
-    const response = await apiClient.delete(`/api/servers/v1/${id}`);
+  delete: async (id: string, name?: string): Promise<any> => {
+    const response = await apiClient.delete(`/api/servers/v1/${id}`, {
+      params: { name }
+    });
     return response.data;
   },
 
@@ -103,7 +105,7 @@ export function useUpdateServer() {
 export function useDeleteServer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => serverService.delete(id),
+    mutationFn: ({ id, name }: { id: string; name: string }) => serverService.delete(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servers"] });
     },

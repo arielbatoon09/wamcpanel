@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, setAccessToken } from "@/services/api-client";
 
 export interface OnboardingStatus {
@@ -22,6 +22,12 @@ export interface AuthResponse {
       expiresIn: string;
     };
   };
+}
+
+export interface UpdateProfileInput {
+  name?: string;
+  currentPassword?: string;
+  newPassword?: string;
 }
 
 export const authService = {
@@ -53,6 +59,11 @@ export const authService = {
     const response = await apiClient.post("/api/auth/v1/logout");
     setAccessToken(null);
     return response.data;
+  },
+
+  updateProfile: async (data: UpdateProfileInput): Promise<{ user: AuthUser }> => {
+    const response = await apiClient.patch<{ data: { user: AuthUser } }>("/api/auth/v1/profile", data);
+    return response.data.data;
   },
 };
 
@@ -89,5 +100,15 @@ export function useMe() {
 export function useLogout() {
   return useMutation({
     mutationFn: authService.logout,
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateProfileInput) => authService.updateProfile(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me"] });
+    },
   });
 }

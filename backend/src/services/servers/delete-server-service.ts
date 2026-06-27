@@ -1,17 +1,21 @@
 import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
-import { NotFoundException } from "@/exceptions";
+import { NotFoundException, BadRequestException } from "@/exceptions";
 import { docker } from "@/lib/docker";
 import { deleteServerDirectory } from "@/utils/server-path";
 
 @injectable()
 export class DeleteServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
 
-  public async execute(id: string, userId: string) {
+  public async execute(id: string, userId: string, name?: string) {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
     if (!existing) {
       throw new NotFoundException("Server not found");
+    }
+
+    if (name !== undefined && existing.name !== name) {
+      throw new BadRequestException("Confirmation server name does not match");
     }
 
     // Delete Docker Container

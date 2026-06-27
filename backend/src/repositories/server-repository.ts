@@ -68,6 +68,12 @@ export class ServerRepository {
     });
   }
 
+  async findByName(name: string): Promise<Server | null> {
+    return await this.db.server.findFirst({
+      where: { name },
+    });
+  }
+
   async update(id: string, userId: string, data: Partial<Omit<Server, "id" | "userId" | "createdAt" | "updatedAt">>): Promise<Server> {
     return await this.db.server.update({
       where: { id, userId },

@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/common/logo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, User, CreditCard, LifeBuoy } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker";
 import { useMe, useOnboardingStatus, useLogout } from "@/services/auth-service";
@@ -50,28 +49,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
     });
   };
 
-  const navItems = [
-    {
-      label: "Servers",
-      href: "/servers",
-    },
-    {
-      label: "Billing",
-      href: "/billing",
-      disabled: true,
-    },
-    {
-      label: "Account",
-      href: "/account",
-      disabled: true,
-    },
-    {
-      label: "Support",
-      href: "/support",
-      disabled: true,
-    },
-  ];
-
   if (!mounted || meLoading || onboardingLoading || (onboardingData && !onboardingData.onboarded) || meError) {
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-4">
@@ -108,32 +85,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       {/* Top Header / Navigation Bar */}
       <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center border-b border-border bg-card/65 px-6 backdrop-blur-md select-none">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
-          {/* Logo and Nav links */}
+          {/* Logo */}
           <div className="flex items-center gap-8">
             <Logo href="/servers" textSize="lg" className="gap-2" />
-
-            {/* Navigation Items */}
-            <nav className="hidden items-center gap-1.5 md:flex">
-              {navItems.map((item, index) => {
-                const isActive = pathname.startsWith(item.href);
-                return item.disabled ? (
-                  <span key={index} className="cursor-not-allowed px-3 py-1.5 text-xs font-semibold text-muted-foreground/50 select-none" title="Coming Soon">
-                    {item.label}
-                  </span>
-                ) : (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    className={cn(
-                      "cursor-pointer rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150",
-                      isActive ? "bg-primary/10 font-bold text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
 
           {/* Action Controls & Profile Menu */}
@@ -163,14 +117,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
               <DropdownMenuContent align="end" className="w-52">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer gap-2 text-xs">
+                <DropdownMenuItem onClick={() => router.push("/settings/profile")} className="cursor-pointer gap-2 text-xs">
                   <User className="h-3.5 w-3.5" /> Profile Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2 text-xs">
-                  <CreditCard className="h-3.5 w-3.5" /> Billing Info
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2 text-xs">
-                  <LifeBuoy className="h-3.5 w-3.5" /> Support Tickets
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive">
@@ -186,6 +134,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       <main className={cn("flex-1 bg-background/50 p-6", isServerDetail ? "overflow-y-auto lg:h-[calc(100vh-64px)] lg:overflow-hidden" : "overflow-y-auto")}>
         <div className={cn("mx-auto max-w-7xl", isServerDetail ? "h-auto lg:h-full" : "space-y-6")}>{children}</div>
       </main>
+
     </div>
   );
 }

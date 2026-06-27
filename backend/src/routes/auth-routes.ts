@@ -2,7 +2,7 @@ import { Router } from "express";
 import { container } from "@/lib/container";
 import { AuthController } from "@/controllers/auth-controller";
 import { SchemaMiddleware, AuthMiddleware } from "@/middlewares";
-import { signupWithEmailSchema, loginWithEmailSchema, refreshTokenSchema } from "@/schemas/auth";
+import { signupWithEmailSchema, loginWithEmailSchema, refreshTokenSchema, updateProfileSchema } from "@/schemas/auth";
 
 const router = Router();
 const authController = container.resolve(AuthController);
@@ -17,5 +17,7 @@ router.post("/v1/login", SchemaMiddleware.validate(loginWithEmailSchema), authCo
 router.post("/v1/refresh-token", SchemaMiddleware.validate(refreshTokenSchema), authController.refreshToken);
 
 router.post("/v1/logout", authController.logout);
+
+router.patch("/v1/profile", AuthMiddleware.execute, SchemaMiddleware.validate(updateProfileSchema), authController.updateProfile);
 
 export default router;
