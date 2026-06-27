@@ -110,7 +110,9 @@ export function initSocketIO(server: HTTPServer) {
         });
       } catch (err: any) {
         handleStreamEnd(serverId);
-        console.error(err);
+        if (err.statusCode !== 404 && err.reason !== "no such container") {
+          console.error(`Error attaching log stream for server ${serverId}:`, err);
+        }
       }
     };
 
