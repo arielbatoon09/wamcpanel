@@ -2,6 +2,7 @@ import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
 import { NotFoundException } from "@/exceptions";
 import { toServerResponse } from "@/utils/server-mapper";
+import * as path from "path";
 import { docker } from "@/lib/docker";
 import { getServerDirectory } from "@/utils/server-path";
 import { readServerProperties } from "@/utils/server-properties";
@@ -12,7 +13,7 @@ export class ToggleServerPowerService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) {}
+  ) { }
 
   public async execute(id: string, userId: string, action: "start" | "stop" | "restart" | "kill") {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
@@ -46,7 +47,7 @@ export class ToggleServerPowerService {
 
             // Recreate container if it exists but is offline to apply database configuration changes (like version, RAM/CPU limits, Java runtime)
             if (!inspectData.State.Running) {
-              await container.remove({ force: true }).catch(() => {});
+              await container.remove({ force: true }).catch(() => { });
               containerExists = false;
             }
           } catch (inspectError: any) {
@@ -77,7 +78,15 @@ export class ToggleServerPowerService {
 
             // Create container
             const hostDir = getServerDirectory(id);
-            const dockerBindDir = process.platform === "win32" ? `/mnt/${hostDir.charAt(0).toLowerCase()}${hostDir.slice(2).replace(/\\/g, "/")}` : hostDir;
+            let dockerBindDir = hostDir;
+
+            if (process.platform === "win32") {
+              dockerBindDir = `/mnt/${hostDir.charAt(0).toLowerCase()}${hostDir.slice(2).replace(/\\/g, "/")}`;
+            } else if (process.env.HOST_SERVERS_DIR) {
+              // Ensure forward slashes for docker bind paths
+              dockerBindDir = path.posix.join(process.env.HOST_SERVERS_DIR.replace(/\\/g, "/"), id);
+            }
+
             const Env = ["EULA=TRUE", `TYPE=${existing.software.toUpperCase()}`, `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`, "CREATE_CONSOLE_IN_PIPE=true"];
 
             if (isVelocity) {
@@ -152,7 +161,7 @@ export class ToggleServerPowerService {
                   ramUsage: 0,
                   uptime: 0,
                 })
-                .catch(() => {});
+                .catch(() => { });
             }
           }, 5000);
         } catch (backgroundError) {
@@ -164,7 +173,7 @@ export class ToggleServerPowerService {
               ramUsage: 0,
               uptime: 0,
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       })();
 
@@ -234,13 +243,13 @@ export class ToggleServerPowerService {
       (async () => {
         try {
           try {
-            await container.stop({ t: 10 }).catch(() => {});
+            await container.stop({ t: 10 }).catch(() => { });
           } catch {
             // ignore stop failure
           }
 
           try {
-            await container.remove({ force: true }).catch(() => {});
+            await container.remove({ force: true }).catch(() => { });
           } catch {
             // ignore remove failure
           }
@@ -256,7 +265,7 @@ export class ToggleServerPowerService {
               ramUsage: 0,
               uptime: 0,
             })
-            .catch(() => {});
+            .catch(() => { });
         }
       })();
 
@@ -267,7 +276,7 @@ export class ToggleServerPowerService {
     }
 
     if (action === "kill") {
-      await container.kill().catch(() => {});
+      await container.kill().catch(() => { });
 
       const server = await this.serverRepository.update(id, userId, {
         status: "OFFLINE",

@@ -74,6 +74,7 @@ services:
       PORT: 8000
       JWT_SECRET: ${JWT_SECRET:-some_jwt_secret_key_here}
       SFTP_PORT: ${SFTP_PORT:-2022}
+      HOST_SERVERS_DIR: ${HOST_SERVERS_DIR:-/opt/wamcpanel/servers}
 
     depends_on:
       pg:
