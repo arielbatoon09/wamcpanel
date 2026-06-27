@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.mjs",
+    "start": "npx prisma migrate deploy && node dist/server.mjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "test": "vitest",

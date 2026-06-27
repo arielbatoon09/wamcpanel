@@ -56,6 +56,10 @@ services:
     ports:
       - '${BACKEND_PORT:-8000}:8000'
       - '${SFTP_PORT:-2022}:2022'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./servers:/servers
+      - ./backups:/backups
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - STAGE=${STAGE:-dev}
