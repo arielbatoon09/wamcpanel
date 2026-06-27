@@ -21,7 +21,7 @@ RUN npm ci
 COPY . .
 
 # Generate Prisma Client
-RUN npm run db:generate
+RUN DATABASE_URL="postgresql://mock:mock@localhost:5432/mock" npm run db:generate
 
 # Stage 3: Builder stage builds the app and prunes devDependencies
 FROM development AS builder
