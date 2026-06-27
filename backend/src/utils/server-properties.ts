@@ -42,7 +42,9 @@ export async function readServerProperties(serverId: string): Promise<Record<str
     }
   } catch (err: any) {
     // If file doesn't exist, we return the defaults
-    console.log(err);
+    if (err.code !== "ENOENT") {
+      console.error("Error reading server.properties:", err);
+    }
   }
 
   return properties;
