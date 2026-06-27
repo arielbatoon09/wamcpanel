@@ -1,6 +1,5 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-// @ts-expect-error: @prisma/client default export is used for ESM CJS interop at runtime but lacks default export type definition
 import pkg from "@prisma/client";
 
 const connectionString = `${process.env.DATABASE_URL}`;
