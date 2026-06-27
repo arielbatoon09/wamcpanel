@@ -25,11 +25,17 @@ curl -fsSL https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/scri
 ```
 
 ### 2. Configure Environment variables
-Open the auto-created `.env` file in the root directory to customize your database passwords and JWT secrets:
+Open the auto-created `.env` file in the root directory:
 ```bash
 cd /opt/wamcpanel
 nano .env
 ```
+Ensure you update the following critical variables for production security and routing:
+*   `JWT_SECRET`: Change this to a secure, random string (e.g. `openssl rand -hex 32`) to sign user sessions.
+*   `DB_PASSWORD`: Set a strong database password to secure your PostgreSQL instance.
+*   `DATABASE_URL`: Update the password section in the connection string to match your `DB_PASSWORD`.
+*   `BACKEND_URL`: Replace `localhost` with your public VPS IP address or domain (e.g., `http://your-server-ip:8000`).
+*   `NEXT_PUBLIC_BACKEND_URL`: Replace `localhost` with your public VPS IP address or domain (e.g., `http://your-server-ip:8000`).
 
 ### 3. Start WAMCPanel via Docker Compose
 Build and run the entire stack (PostgreSQL, Redis, Backend, and Frontend containers) in detached daemon mode:
