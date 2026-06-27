@@ -97,6 +97,10 @@ export function initSocketIO(server: HTTPServer) {
           const lines = text.split(/\r?\n/);
           for (const line of lines) {
             if (line.trim()) {
+              // Silence spammy RCON client connection/disconnection logs from local metrics polling
+              if (line.includes("Thread RCON Client") && (line.includes("started") || line.includes("shutting down"))) {
+                continue;
+              }
               socket.emit("log-line", { serverId, line });
             }
           }

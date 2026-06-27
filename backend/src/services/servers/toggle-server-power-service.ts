@@ -56,7 +56,11 @@ export class ToggleServerPowerService {
           }
 
           if (!containerExists) {
-            const image = `itzg/minecraft-server:java${existing.javaVersion}`;
+            const isVelocity = existing.software === "Velocity";
+            const image = isVelocity
+              ? "itzg/mc-proxy"
+              : `itzg/minecraft-server:java${existing.javaVersion}`;
+            const containerPort = isVelocity ? "25577/tcp" : "25565/tcp";
 
             // Pull image
             await new Promise<void>((resolve, reject) => {
@@ -81,10 +85,15 @@ export class ToggleServerPowerService {
             const Env = [
               "EULA=TRUE",
               `TYPE=${existing.software.toUpperCase()}`,
-              `VERSION=${existing.version}`,
               `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`,
               "CREATE_CONSOLE_IN_PIPE=true",
             ];
+
+            if (isVelocity) {
+              Env.push("VELOCITY_VERSION=latest");
+            } else {
+              Env.push(`VERSION=${existing.version}`);
+            }
 
             if (existing.worldSeed) {
               Env.push(`SEED=${existing.worldSeed}`);
@@ -104,18 +113,18 @@ export class ToggleServerPowerService {
               name: containerName,
               Env,
               ExposedPorts: {
-                "25565/tcp": {},
+                [containerPort]: {},
               },
               HostConfig: {
                 PortBindings: {
-                  "25565/tcp": [
+                  [containerPort]: [
                     {
                       HostPort: existing.port.toString(),
                     },
                   ],
                 },
                 Binds: [
-                  `${dockerBindDir}:/data`,
+                  `${dockerBindDir}:${isVelocity ? "/server" : "/data"}`,
                 ],
                 Memory: existing.ramLimit * 1024 * 1024,
                 NanoCpus: existing.cpuLimit * 10000000,

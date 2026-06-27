@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { useRouter } from "next/navigation";
+import { useDeleteServer } from "@/services/server-service";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import { Gamepad2, HelpCircle, Gauge, AlertTriangle, Lock, Cpu, Settings2, Trash
 export function ServerSettingsTab({ id }: { id: string }) {
   const router = useRouter();
   const { servers, deleteServer, updateServer, addLog } = useServerStore();
+  const deleteMutation = useDeleteServer();
   const server = servers.find((s) => s.id === id);
   const initialSettings = server?.settings || {};
 
@@ -155,8 +157,16 @@ export function ServerSettingsTab({ id }: { id: string }) {
 
   const handleDeleteServer = () => {
     if (confirm(`Are you sure you want to delete ${server.name}?`)) {
-      deleteServer(id);
-      router.push("/servers");
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          deleteServer(id);
+          router.push("/servers");
+          toast.success("Server deleted successfully");
+        },
+        onError: (err: any) => {
+          toast.error(err.response?.data?.message || err.message || "Failed to delete server");
+        },
+      });
     }
   };
 

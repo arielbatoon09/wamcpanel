@@ -71,48 +71,61 @@ export class ServerMetricsWorker {
             }
 
             // Get player count via RCON list command
+            // Skip for Velocity (proxy — no RCON) and non-ONLINE servers (prevents connection flood during startup)
             let currentPlayers = 0;
             let maxPlayers = server.maxPlayers;
             let status = server.status;
 
-            try {
-              const exec = await container.exec({
-                Cmd: ["rcon-cli", "list"],
-                User: "1000",
-                AttachStdout: true,
-                AttachStderr: true,
-              });
+            const isVelocity = server.software === "Velocity";
 
-              const execStream = await exec.start({});
-              const rawOutput = await new Promise<string>((resolve, reject) => {
-                let output = "";
-                execStream.on("data", (chunk: Buffer) => {
-                  let text = chunk.toString("utf8");
-                  if (
-                    chunk.length >= 8 &&
-                    (chunk[0] === 1 || chunk[0] === 2) &&
-                    chunk[1] === 0 &&
-                    chunk[2] === 0 &&
-                    chunk[3] === 0
-                  ) {
-                    text = chunk.subarray(8).toString("utf8");
-                  }
-                  output += text;
+            if (status === ServerStatus.OFFLINE) {
+              status = isVelocity ? ServerStatus.ONLINE : ServerStatus.STARTING;
+            } else if (isVelocity && status === ServerStatus.STARTING) {
+              status = ServerStatus.ONLINE;
+            }
+
+            const canRunRcon = !isVelocity && status === ServerStatus.ONLINE;
+
+            if (canRunRcon) {
+              try {
+                const exec = await container.exec({
+                  Cmd: ["rcon-cli", "list"],
+                  User: "1000",
+                  AttachStdout: true,
+                  AttachStderr: true,
                 });
-                execStream.on("end", () => resolve(output.trim()));
-                execStream.on("error", reject);
-              });
 
-              // e.g. "There are 1 of a max of 20 players online: Maezt"
-              const match = rawOutput.match(/There are (\d+) of a max of (\d+) players/);
-              if (match) {
-                currentPlayers = parseInt(match[1], 10);
-                maxPlayers = parseInt(match[2], 10);
-                // If list command succeeds, server is ONLINE
-                status = ServerStatus.ONLINE;
+                const execStream = await exec.start({});
+                const rawOutput = await new Promise<string>((resolve, reject) => {
+                  let output = "";
+                  execStream.on("data", (chunk: Buffer) => {
+                    let text = chunk.toString("utf8");
+                    if (
+                      chunk.length >= 8 &&
+                      (chunk[0] === 1 || chunk[0] === 2) &&
+                      chunk[1] === 0 &&
+                      chunk[2] === 0 &&
+                      chunk[3] === 0
+                    ) {
+                      text = chunk.subarray(8).toString("utf8");
+                    }
+                    output += text;
+                  });
+                  execStream.on("end", () => resolve(output.trim()));
+                  execStream.on("error", reject);
+                });
+
+                // e.g. "There are 1 of a max of 20 players online: Maezt"
+                const match = rawOutput.match(/There are (\d+) of a max of (\d+) players/);
+                if (match) {
+                  currentPlayers = parseInt(match[1], 10);
+                  maxPlayers = parseInt(match[2], 10);
+                  // If list command succeeds, server is ONLINE
+                  status = ServerStatus.ONLINE;
+                }
+              } catch (rconErr) {
+                // If RCON fails and we were STARTING, stay starting
               }
-            } catch (rconErr) {
-              // If RCON fails and we were STARTING, stay starting
             }
 
             await this.prisma.server.update({
@@ -129,7 +142,7 @@ export class ServerMetricsWorker {
 
           } else {
             // Container exists but is NOT running
-            if (server.status !== ServerStatus.OFFLINE) {
+            if (server.status !== ServerStatus.OFFLINE && server.status !== ServerStatus.STARTING && server.status !== ServerStatus.STOPPING) {
               await this.prisma.server.update({
                 where: { id: server.id },
                 data: {
@@ -144,7 +157,7 @@ export class ServerMetricsWorker {
           }
         } catch (inspectErr: any) {
           // Container inspect failed -> container probably doesn't exist
-          if (server.status !== ServerStatus.OFFLINE) {
+          if (server.status !== ServerStatus.OFFLINE && server.status !== ServerStatus.STARTING && server.status !== ServerStatus.STOPPING) {
             await this.prisma.server.update({
               where: { id: server.id },
               data: {

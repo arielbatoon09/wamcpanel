@@ -2,6 +2,7 @@ import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
 import { ServerSoftware } from "../../../generated/prisma/client";
 import { toServerResponse } from "@/utils/server-mapper";
+import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class CreateServerService {
@@ -24,6 +25,12 @@ export class CreateServerService {
       generateStructures?: boolean;
     }
   ) {
+    // Prevent duplicate port bindings across all servers
+    const portInUse = await this.serverRepository.findByPort(data.port);
+    if (portInUse) {
+      throw new BadRequestException(`Port ${data.port} is already in use by server "${portInUse.name}". Please choose a different port.`);
+    }
+
     const maxPlayers = data.software === "Velocity" ? 500 : 50;
 
     const server = await this.serverRepository.create({
