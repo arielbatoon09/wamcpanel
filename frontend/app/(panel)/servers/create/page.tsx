@@ -93,7 +93,7 @@ export default function CreateServerPage() {
       port: 25565,
       ramLimit: 4096,
       cpuLimit: 200,
-      host: "localhost",
+      host: typeof window !== "undefined" ? window.location.hostname : "localhost",
       javaVersion: "21" as "17" | "21" | "25",
       worldSeed: "",
       worldType: "DEFAULT" as "DEFAULT" | "FLAT" | "LARGE_BIOMES" | "AMPLIFIED",
