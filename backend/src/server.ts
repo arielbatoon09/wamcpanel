@@ -1,6 +1,15 @@
 import "reflect-metadata";
 import "dotenv/config";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("❌ Unhandled Rejection at:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("❌ Uncaught Exception thrown:", error);
+  process.exit(1);
+});
+
 import http from "http";
 import app from "@/app";
 import { initSocketIO } from "@/lib/socket";

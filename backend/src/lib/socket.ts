@@ -3,7 +3,7 @@ import { Server as HTTPServer } from "http";
 import { docker } from "@/lib/docker";
 import { Readable } from "stream";
 import { container } from "tsyringe";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 const logsClearedTimestamps = new Map<string, number>();
 

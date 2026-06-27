@@ -1,4 +1,4 @@
-import { Server } from "../../generated/prisma/client";
+import type { Server } from "@prisma/client";
 import { getServerDirectorySize } from "./server-path";
 
 /**

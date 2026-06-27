@@ -1,5 +1,6 @@
 import { injectable, inject } from "tsyringe";
-import { PrismaClient, ServerStatus } from "../../../generated/prisma/client";
+import type { PrismaClient } from "@prisma/client";
+import { ServerStatus } from "@/lib/prisma";
 import { docker } from "@/lib/docker";
 
 @injectable()
@@ -7,7 +8,7 @@ export class ServerMetricsWorker {
   private intervalId: NodeJS.Timeout | null = null;
   private isTicking = false;
 
-  constructor(@inject("PrismaClient") private readonly prisma: PrismaClient) {}
+  constructor(@inject("PrismaClient") private readonly prisma: PrismaClient) { }
 
   public start() {
     if (this.intervalId) return;
@@ -103,8 +104,6 @@ export class ServerMetricsWorker {
                 } else if (unit === "G") {
                   jvmRamUsage = val * 1024;
                 }
-              } else {
-                console.log(`[Metrics] jcmd Output parsed but no heap match. Raw: ${jcmdOutput.replace(/\n/g, " ")}`);
               }
             } catch (err: any) {
               console.error(`[Metrics] Failed to run jcmd for server ${server.name}:`, err.message || err);

@@ -1,12 +1,12 @@
 import { injectable, inject } from "tsyringe";
 import { ServerRepository } from "@/repositories/server-repository";
-import { ServerSoftware } from "../../../generated/prisma/client";
+import type { ServerSoftware } from "@prisma/client";
 import { toServerResponse } from "@/utils/server-mapper";
 import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class CreateServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
 
   public async execute(
     userId: string,

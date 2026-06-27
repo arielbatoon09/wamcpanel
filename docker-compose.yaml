@@ -52,36 +52,36 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public"
+
     restart: always
+
     ports:
-      - '${BACKEND_PORT:-8000}:8000'
-      - '${SFTP_PORT:-2022}:2022'
+      - "${BACKEND_PORT:-8000}:8000"
+      - "${SFTP_PORT:-2022}:2022"
+
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./servers:/servers
       - ./backups:/backups
+
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - STAGE=${STAGE:-dev}
-      - PORT=8000
-      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-some_jwt_secret_key_here}
-      - BACKEND_URL=${BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
-      - SFTP_PORT=${SFTP_PORT:-2022}
+      DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public"
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: ${NODE_ENV:-production}
+      STAGE: ${STAGE:-dev}
+      PORT: 8000
+      JWT_SECRET: ${JWT_SECRET:-some_jwt_secret_key_here}
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:${BACKEND_PORT:-8000}}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:${FRONTEND_PORT:-3000}}
+      SFTP_PORT: ${SFTP_PORT:-2022}
+
     depends_on:
       pg:
         condition: service_healthy
       redis:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1024M
-        reservations:
-          memory: 256M
 
   # Frontend Web Service (Next.js)
   frontend:
