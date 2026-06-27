@@ -33,6 +33,9 @@ export class ServerController extends BaseController {
     const userId = (req as any).user?.sub;
     const { name, description, software, version, buildNumber, port, ramLimit, cpuLimit, javaVersion, worldSeed, worldType, generateStructures } = req.body;
 
+    const hostHeader = (req.headers["x-forwarded-host"] as string) || req.headers.host || "localhost";
+    const host = hostHeader.split(":")[0];
+
     const result = await this.createServerService.execute(userId, {
       name,
       description,
@@ -46,6 +49,7 @@ export class ServerController extends BaseController {
       worldSeed,
       worldType,
       generateStructures,
+      host,
     });
 
     return this.ok(res, result.data, result.message);

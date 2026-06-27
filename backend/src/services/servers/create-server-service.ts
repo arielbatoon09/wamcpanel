@@ -23,6 +23,7 @@ export class CreateServerService {
       worldSeed?: string;
       worldType?: string;
       generateStructures?: boolean;
+      host?: string;
     }
   ) {
     // Prevent duplicate server names
