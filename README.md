@@ -33,6 +33,7 @@ WAMCPanel is a modern, premium, state-of-the-art server administration dashboard
 
 #### Web File Explorer (Upload, Edit, Compress, Extract)
 ![Server File Manager](images/server-file-manager.png)
+![Server File Manager](images/server-file-manager-open-file.png)
 </details>
 
 <details>
