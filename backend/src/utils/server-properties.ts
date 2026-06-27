@@ -9,18 +9,18 @@ export async function readServerProperties(serverId: string): Promise<Record<str
   const properties: Record<string, string> = {
     // Defaults as requested
     "online-mode": "true",
-    "pvp": "true",
-    "gamemode": "survival",
-    "difficulty": "easy",
+    pvp: "true",
+    gamemode: "survival",
+    difficulty: "easy",
     "allow-flight": "false",
     "enable-command-block": "false",
-    "hardcore": "false",
+    hardcore: "false",
     "view-distance": "10",
     "simulation-distance": "8",
     "spawn-protection": "16",
     "white-list": "false",
     "enforce-whitelist": "false",
-    "motd": "A Minecraft Server",
+    motd: "A Minecraft Server",
   };
 
   try {
@@ -42,6 +42,7 @@ export async function readServerProperties(serverId: string): Promise<Record<str
     }
   } catch (err: any) {
     // If file doesn't exist, we return the defaults
+    console.log(err);
   }
 
   return properties;
@@ -62,10 +63,7 @@ export async function writeServerProperties(serverId: string, newProperties: Rec
   }
 
   // Construct properties file content
-  const outputLines = [
-    "# Minecraft server properties",
-    "# Managed by WAMCPanel",
-  ];
+  const outputLines = ["# Minecraft server properties", "# Managed by WAMCPanel"];
 
   for (const [key, value] of Object.entries(properties)) {
     outputLines.push(`${key}=${value}`);

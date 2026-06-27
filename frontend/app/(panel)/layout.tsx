@@ -22,7 +22,8 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   const isServerDetail = pathname.startsWith("/server/");
 
   useEffect(() => {
-    setMounted(true);
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -43,8 +44,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
         toast.success("Successfully logged out");
         router.push("/login");
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
         toast.error("Logout failed. Please try again.");
+        console.error(err);
       },
     });
   };
@@ -74,10 +76,10 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   const initials = meData?.user?.name
     ? meData.user.name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .substring(0, 2)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .substring(0, 2)
     : meData?.user?.email?.substring(0, 2);
 
   return (
@@ -134,7 +136,6 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
       <main className={cn("flex-1 bg-background/50 p-6", isServerDetail ? "overflow-y-auto lg:h-[calc(100vh-64px)] lg:overflow-hidden" : "overflow-y-auto")}>
         <div className={cn("mx-auto max-w-7xl", isServerDetail ? "h-auto lg:h-full" : "space-y-6")}>{children}</div>
       </main>
-
     </div>
   );
 }

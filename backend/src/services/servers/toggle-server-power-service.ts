@@ -12,7 +12,7 @@ export class ToggleServerPowerService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   public async execute(id: string, userId: string, action: "start" | "stop" | "restart" | "kill") {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);
@@ -46,7 +46,7 @@ export class ToggleServerPowerService {
 
             // Recreate container if it exists but is offline to apply database configuration changes (like version, RAM/CPU limits, Java runtime)
             if (!inspectData.State.Running) {
-              await container.remove({ force: true }).catch(() => { });
+              await container.remove({ force: true }).catch(() => {});
               containerExists = false;
             }
           } catch (inspectError: any) {
@@ -57,9 +57,7 @@ export class ToggleServerPowerService {
 
           if (!containerExists) {
             const isVelocity = existing.software === "Velocity";
-            const image = isVelocity
-              ? "itzg/mc-proxy"
-              : `itzg/minecraft-server:java${existing.javaVersion}`;
+            const image = isVelocity ? "itzg/mc-proxy" : `itzg/minecraft-server:java${existing.javaVersion}`;
             const containerPort = isVelocity ? "25577/tcp" : "25565/tcp";
 
             // Pull image
@@ -67,7 +65,7 @@ export class ToggleServerPowerService {
               docker.pull(image, {}, (err, stream) => {
                 if (err) return reject(err);
                 if (!stream) return reject(new Error("No stream returned from docker pull"));
-                docker.modem.followProgress(stream, (followErr) => {
+                docker.modem.followProgress(stream, followErr => {
                   if (followErr) reject(followErr);
                   else resolve();
                 });
@@ -79,15 +77,8 @@ export class ToggleServerPowerService {
 
             // Create container
             const hostDir = getServerDirectory(id);
-            const dockerBindDir = process.platform === "win32"
-              ? `/mnt/${hostDir.charAt(0).toLowerCase()}${hostDir.slice(2).replace(/\\/g, "/")}`
-              : hostDir;
-            const Env = [
-              "EULA=TRUE",
-              `TYPE=${existing.software.toUpperCase()}`,
-              `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`,
-              "CREATE_CONSOLE_IN_PIPE=true",
-            ];
+            const dockerBindDir = process.platform === "win32" ? `/mnt/${hostDir.charAt(0).toLowerCase()}${hostDir.slice(2).replace(/\\/g, "/")}` : hostDir;
+            const Env = ["EULA=TRUE", `TYPE=${existing.software.toUpperCase()}`, `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`, "CREATE_CONSOLE_IN_PIPE=true"];
 
             if (isVelocity) {
               Env.push("VELOCITY_VERSION=latest");
@@ -123,9 +114,7 @@ export class ToggleServerPowerService {
                     },
                   ],
                 },
-                Binds: [
-                  `${dockerBindDir}:${isVelocity ? "/server" : "/data"}`,
-                ],
+                Binds: [`${dockerBindDir}:${isVelocity ? "/server" : "/data"}`],
                 Memory: existing.ramLimit * 1024 * 1024,
                 NanoCpus: existing.cpuLimit * 10000000,
               },
@@ -156,23 +145,26 @@ export class ToggleServerPowerService {
               }
             } catch (inspectErr) {
               console.error("Failed to inspect container post-start:", inspectErr);
-              await this.serverRepository.update(id, userId, {
-                status: "OFFLINE",
-                cpuUsage: 0,
-                ramUsage: 0,
-                uptime: 0,
-              }).catch(() => { });
+              await this.serverRepository
+                .update(id, userId, {
+                  status: "OFFLINE",
+                  cpuUsage: 0,
+                  ramUsage: 0,
+                  uptime: 0,
+                })
+                .catch(() => {});
             }
           }, 5000);
-
         } catch (backgroundError) {
           console.error("Background server startup failed:", backgroundError);
-          await this.serverRepository.update(id, userId, {
-            status: "OFFLINE",
-            cpuUsage: 0,
-            ramUsage: 0,
-            uptime: 0,
-          }).catch(() => { });
+          await this.serverRepository
+            .update(id, userId, {
+              status: "OFFLINE",
+              cpuUsage: 0,
+              ramUsage: 0,
+              uptime: 0,
+            })
+            .catch(() => {});
         }
       })();
 
@@ -196,26 +188,33 @@ export class ToggleServerPowerService {
       await this.activityLogService.log(id, userId, "info", "power", "Server stop sequence initiated.");
 
       // Trigger docker stop
-      container.stop().then(async () => {
-        try {
-          await this.serverRepository.update(id, userId, {
-            status: "OFFLINE",
-            cpuUsage: 0,
-            ramUsage: 0,
-            uptime: 0,
-          });
-        } catch (e) { }
-      }).catch(async () => {
-        // If container stop fails (e.g. already stopped), set to offline
-        try {
-          await this.serverRepository.update(id, userId, {
-            status: "OFFLINE",
-            cpuUsage: 0,
-            ramUsage: 0,
-            uptime: 0,
-          });
-        } catch (e) { }
-      });
+      container
+        .stop()
+        .then(async () => {
+          try {
+            await this.serverRepository.update(id, userId, {
+              status: "OFFLINE",
+              cpuUsage: 0,
+              ramUsage: 0,
+              uptime: 0,
+            });
+          } catch {
+            // ignore database update failure
+          }
+        })
+        .catch(async () => {
+          // If container stop fails (e.g. already stopped), set to offline
+          try {
+            await this.serverRepository.update(id, userId, {
+              status: "OFFLINE",
+              cpuUsage: 0,
+              ramUsage: 0,
+              uptime: 0,
+            });
+          } catch {
+            // ignore database update failure
+          }
+        });
 
       return {
         message: "Server stop sequence initiated",
@@ -235,23 +234,29 @@ export class ToggleServerPowerService {
       (async () => {
         try {
           try {
-            await container.stop({ t: 10 }).catch(() => { });
-          } catch (e) { }
+            await container.stop({ t: 10 }).catch(() => {});
+          } catch {
+            // ignore stop failure
+          }
 
           try {
-            await container.remove({ force: true }).catch(() => { });
-          } catch (e) { }
+            await container.remove({ force: true }).catch(() => {});
+          } catch {
+            // ignore remove failure
+          }
 
           await this.serverRepository.update(id, userId, { status: "OFFLINE" });
           await this.execute(id, userId, "start");
         } catch (err) {
           console.error("Failed to restart container:", err);
-          await this.serverRepository.update(id, userId, {
-            status: "OFFLINE",
-            cpuUsage: 0,
-            ramUsage: 0,
-            uptime: 0,
-          }).catch(() => { });
+          await this.serverRepository
+            .update(id, userId, {
+              status: "OFFLINE",
+              cpuUsage: 0,
+              ramUsage: 0,
+              uptime: 0,
+            })
+            .catch(() => {});
         }
       })();
 
@@ -262,7 +267,7 @@ export class ToggleServerPowerService {
     }
 
     if (action === "kill") {
-      await container.kill().catch(() => { });
+      await container.kill().catch(() => {});
 
       const server = await this.serverRepository.update(id, userId, {
         status: "OFFLINE",

@@ -84,13 +84,7 @@ export function initSocketIO(server: HTTPServer) {
           }
 
           let text = chunk.toString("utf8");
-          if (
-            chunk.length >= 8 &&
-            (chunk[0] === 1 || chunk[0] === 2) &&
-            chunk[1] === 0 &&
-            chunk[2] === 0 &&
-            chunk[3] === 0
-          ) {
+          if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
             text = chunk.subarray(8).toString("utf8");
           }
 
@@ -106,7 +100,7 @@ export function initSocketIO(server: HTTPServer) {
           }
         });
 
-        stream.on("error", (err) => {
+        stream.on("error", err => {
           console.error(`Log stream error for ${serverId}:`, err);
           handleStreamEnd(serverId);
         });
@@ -114,9 +108,9 @@ export function initSocketIO(server: HTTPServer) {
         stream.on("end", () => {
           handleStreamEnd(serverId);
         });
-
       } catch (err: any) {
         handleStreamEnd(serverId);
+        console.error(err);
       }
     };
 
@@ -140,6 +134,7 @@ export function initSocketIO(server: HTTPServer) {
         retryTimer = setTimeout(() => {
           pollServerStatus(serverId);
         }, 5000);
+        console.error(err);
       }
     };
 
@@ -165,6 +160,7 @@ export function initSocketIO(server: HTTPServer) {
           attachLogStream(serverId);
         }, 5000);
         return;
+        console.error(err);
       }
 
       emitSystemMessage(serverId, `[SYSTEM] Log stream ended. Waiting for container to start...`);
@@ -212,13 +208,7 @@ export function initSocketIO(server: HTTPServer) {
         execStream.on("data", (chunk: Buffer) => {
           let text = chunk.toString("utf8");
           // Clean Docker multiplexing header if present
-          if (
-            chunk.length >= 8 &&
-            (chunk[0] === 1 || chunk[0] === 2) &&
-            chunk[1] === 0 &&
-            chunk[2] === 0 &&
-            chunk[3] === 0
-          ) {
+          if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
             text = chunk.subarray(8).toString("utf8");
           }
           output += text;

@@ -22,6 +22,7 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
 
   useEffect(() => {
     if (!isOnline) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOnlinePlayers([]);
       return;
     }
@@ -186,7 +187,7 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
                   <div key={player.name} className="flex items-center rounded-lg border border-border/20 bg-secondary/15 p-2">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="font-semibold text-foreground/80 truncate max-w-[200px]">
+                      <span className="max-w-[200px] truncate font-semibold text-foreground/80">
                         {player.name.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")}
                       </span>
                     </div>

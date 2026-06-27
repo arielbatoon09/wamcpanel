@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,26 +25,28 @@ export function FileEditorModal({ isOpen, onClose, serverId, filePath }: FileEdi
 
   const isDirty = content !== originalContent;
 
-  useEffect(() => {
-    if (isOpen && filePath) {
-      loadFile();
-    }
-  }, [isOpen, filePath]);
-
-  const loadFile = async () => {
+  const loadFile = useCallback(async () => {
     setLoading(true);
     setShowConfirmDiscard(false);
     try {
       const fileContent = await fileService.view(serverId, filePath);
       setContent(fileContent);
       setOriginalContent(fileContent);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load file content");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to load file content");
       onClose();
     } finally {
       setLoading(false);
     }
-  };
+  }, [serverId, filePath, onClose]);
+
+  useEffect(() => {
+    if (isOpen && filePath) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadFile();
+    }
+  }, [isOpen, filePath, loadFile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -53,8 +55,9 @@ export function FileEditorModal({ isOpen, onClose, serverId, filePath }: FileEdi
       setOriginalContent(content);
       toast.success("File saved successfully");
       setShowConfirmDiscard(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to save file");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to save file");
     } finally {
       setSaving(false);
     }
@@ -73,16 +76,14 @@ export function FileEditorModal({ isOpen, onClose, serverId, filePath }: FileEdi
       <DialogContent showCloseButton={false} className="flex h-[85vh] max-w-4xl flex-col border border-border bg-card/95 p-6 shadow-2xl backdrop-blur-md">
         <DialogHeader className="flex flex-row items-center justify-between border-b border-border/60 pb-3">
           <div className="flex flex-col gap-1">
-            <DialogTitle className="font-mono text-sm font-bold tracking-wider uppercase text-foreground">
-              Editing: {filePath.split("/").pop()}
-            </DialogTitle>
+            <DialogTitle className="font-mono text-sm font-bold tracking-wider text-foreground uppercase">Editing: {filePath.split("/").pop()}</DialogTitle>
             <DialogDescription className="font-mono text-xs text-muted-foreground">
-              Path: {filePath} {isDirty && <span className="ml-1 text-amber-500 font-bold">* Unsaved Changes</span>}
+              Path: {filePath} {isDirty && <span className="ml-1 font-bold text-amber-500">* Unsaved Changes</span>}
             </DialogDescription>
           </div>
           <button
             onClick={handleRequestClose}
-            className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none cursor-pointer"
+            className="cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-none disabled:pointer-events-none"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Close</span>
@@ -103,20 +104,10 @@ export function FileEditorModal({ isOpen, onClose, serverId, filePath }: FileEdi
                   <span>You have unsaved changes. Closing will discard them.</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowConfirmDiscard(false)}
-                    className="h-7 border-amber-500/20 text-amber-400 hover:bg-amber-500/20"
-                  >
+                  <Button size="sm" variant="outline" onClick={() => setShowConfirmDiscard(false)} className="h-7 border-amber-500/20 text-amber-400 hover:bg-amber-500/20">
                     Keep Editing
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={onClose}
-                    className="h-7 bg-rose-600 hover:bg-rose-500"
-                  >
+                  <Button size="sm" variant="destructive" onClick={onClose} className="h-7 bg-rose-600 hover:bg-rose-500">
                     Discard Changes
                   </Button>
                 </div>
@@ -132,20 +123,14 @@ export function FileEditorModal({ isOpen, onClose, serverId, filePath }: FileEdi
               />
             </div>
 
-            <div className="flex justify-between items-center shrink-0 border-t border-border/60 pt-3">
-              <span className="font-mono text-[10px] text-muted-foreground uppercase">
-                Encoding: UTF-8 | Status: {isDirty ? "Modified" : "Saved"}
-              </span>
+            <div className="flex shrink-0 items-center justify-between border-t border-border/60 pt-3">
+              <span className="font-mono text-[10px] text-muted-foreground uppercase">Encoding: UTF-8 | Status: {isDirty ? "Modified" : "Saved"}</span>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={handleRequestClose} disabled={saving} className="h-8 text-xs font-semibold cursor-pointer">
+                <Button variant="outline" size="sm" onClick={handleRequestClose} disabled={saving} className="h-8 cursor-pointer text-xs font-semibold">
                   Close
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={saving || !isDirty} className="h-8 text-xs font-semibold gap-1 cursor-pointer">
-                  {saving ? (
-                    <Spinner className="h-3 w-3" />
-                  ) : (
-                    <Save className="h-3.5 w-3.5" />
-                  )}
+                <Button size="sm" onClick={handleSave} disabled={saving || !isDirty} className="h-8 cursor-pointer gap-1 text-xs font-semibold">
+                  {saving ? <Spinner className="h-3 w-3" /> : <Save className="h-3.5 w-3.5" />}
                   Save Changes
                 </Button>
               </div>

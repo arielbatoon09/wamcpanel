@@ -7,9 +7,7 @@ export class ServerMetricsWorker {
   private intervalId: NodeJS.Timeout | null = null;
   private isTicking = false;
 
-  constructor(
-    @inject("PrismaClient") private readonly prisma: PrismaClient
-  ) { }
+  constructor(@inject("PrismaClient") private readonly prisma: PrismaClient) {}
 
   public start() {
     if (this.intervalId) return;
@@ -68,6 +66,7 @@ export class ServerMetricsWorker {
               // fallback values if stats call fails (e.g. windows docker desktop latency)
               cpuUsage = server.status === "STARTING" ? 85 : 5;
               ramUsage = Math.floor(server.ramLimit * 0.4);
+              console.log(statsErr);
             }
 
             // Try to get actual JVM memory usage via jcmd
@@ -83,13 +82,7 @@ export class ServerMetricsWorker {
                 let output = "";
                 jcmdStream.on("data", (chunk: Buffer) => {
                   let text = chunk.toString("utf8");
-                  if (
-                    chunk.length >= 8 &&
-                    (chunk[0] === 1 || chunk[0] === 2) &&
-                    chunk[1] === 0 &&
-                    chunk[2] === 0 &&
-                    chunk[3] === 0
-                  ) {
+                  if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
                     text = chunk.subarray(8).toString("utf8");
                   }
                   output += text;
@@ -151,13 +144,7 @@ export class ServerMetricsWorker {
                   let output = "";
                   execStream.on("data", (chunk: Buffer) => {
                     let text = chunk.toString("utf8");
-                    if (
-                      chunk.length >= 8 &&
-                      (chunk[0] === 1 || chunk[0] === 2) &&
-                      chunk[1] === 0 &&
-                      chunk[2] === 0 &&
-                      chunk[3] === 0
-                    ) {
+                    if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
                       text = chunk.subarray(8).toString("utf8");
                     }
                     output += text;
@@ -176,6 +163,7 @@ export class ServerMetricsWorker {
                 }
               } catch (rconErr) {
                 // If RCON fails and we were STARTING, stay starting
+                console.log(rconErr);
               }
             }
 
@@ -190,7 +178,6 @@ export class ServerMetricsWorker {
                 maxPlayers,
               },
             });
-
           } else {
             // Container exists but is NOT running
             if (server.status !== ServerStatus.OFFLINE && server.status !== ServerStatus.STARTING && server.status !== ServerStatus.STOPPING) {
@@ -220,6 +207,7 @@ export class ServerMetricsWorker {
               },
             });
           }
+          console.log(inspectErr);
         }
       }
     } catch (err) {

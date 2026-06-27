@@ -6,9 +6,7 @@ import { ActivityLogService } from "@/services/servers/activity-log-service";
 
 @injectable()
 export class ActivityLogController extends BaseController {
-  constructor(
-    @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) {
+  constructor(@inject(ActivityLogService) private readonly activityLogService: ActivityLogService) {
     super();
   }
 

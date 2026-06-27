@@ -3,7 +3,7 @@ import { PrismaClient, Server, ServerStatus, ServerSoftware } from "@prisma/clie
 
 @injectable()
 export class ServerRepository {
-  constructor(@inject("PrismaClient") private readonly db: PrismaClient) { }
+  constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
 
   async create(data: {
     name: string;

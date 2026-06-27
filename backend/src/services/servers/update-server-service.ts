@@ -10,7 +10,7 @@ export class UpdateServerService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   public async execute(
     id: string,

@@ -2,7 +2,16 @@ import { injectable, inject } from "tsyringe";
 import type { Request, Response } from "express";
 import { BaseController } from "@/controllers/base-controller";
 import { AsyncController } from "@/lib/decorators";
-import { CreateServerService, ListServersService, GetServerService, UpdateServerService, DeleteServerService, ToggleServerPowerService, MinecraftMetaService, HostSpecsService } from "@/services/servers";
+import {
+  CreateServerService,
+  ListServersService,
+  GetServerService,
+  UpdateServerService,
+  DeleteServerService,
+  ToggleServerPowerService,
+  MinecraftMetaService,
+  HostSpecsService,
+} from "@/services/servers";
 
 @injectable()
 export class ServerController extends BaseController {

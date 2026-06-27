@@ -13,7 +13,7 @@ export class FileService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -168,7 +168,7 @@ export class FileService {
         const writeStream = fs.createWriteStream(targetPath);
         stream.pipe(writeStream);
         writeStream.on("finish", resolve);
-        writeStream.on("error", (err) => {
+        writeStream.on("error", err => {
           writeStream.destroy();
           reject(err);
         });
@@ -202,7 +202,7 @@ export class FileService {
 
   public async compress(serverId: string, userId: string, relativePath: string, files: string[], archiveName: string): Promise<void> {
     await this.verifyServerAccess(serverId, userId);
-    const parentPath = this.resolveSafePath(serverId, relativePath);
+    // const parentPath = this.resolveSafePath(serverId, relativePath);
     const targetZipPath = this.resolveSafePath(serverId, path.join(relativePath, archiveName));
 
     try {

@@ -7,9 +7,7 @@ import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class BackupController extends BaseController {
-  constructor(
-    @inject(BackupService) private readonly backupService: BackupService
-  ) {
+  constructor(@inject(BackupService) private readonly backupService: BackupService) {
     super();
   }
 
@@ -73,7 +71,8 @@ export class BackupController extends BaseController {
     }
 
     const contentLength = req.headers["content-length"];
-    if (contentLength && parseInt(contentLength, 10) > 1024 * 1024 * 1024) { // 1GB limit for backups
+    if (contentLength && parseInt(contentLength, 10) > 1024 * 1024 * 1024) {
+      // 1GB limit for backups
       throw new BadRequestException("Backup exceeds maximum upload limit of 1GB");
     }
 

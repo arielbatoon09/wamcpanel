@@ -123,7 +123,7 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
   };
 
   return (
-    <Card className={`!py-0 flex h-full flex-col overflow-hidden border border-border bg-card/65 backdrop-blur-sm ${className || ""}`}>
+    <Card className={`flex h-full flex-col overflow-hidden border border-border bg-card/65 !py-0 backdrop-blur-sm ${className || ""}`}>
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/80 bg-secondary/35 px-4 py-3">
         <div className="flex items-center gap-2">

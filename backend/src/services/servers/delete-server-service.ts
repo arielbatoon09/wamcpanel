@@ -6,7 +6,7 @@ import { deleteServerDirectory } from "@/utils/server-path";
 
 @injectable()
 export class DeleteServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
 
   public async execute(id: string, userId: string, name?: string) {
     const existing = await this.serverRepository.findByIdAndUserId(id, userId);

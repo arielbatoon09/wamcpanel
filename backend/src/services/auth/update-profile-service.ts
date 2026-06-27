@@ -5,7 +5,7 @@ import { BadRequestException, NotFoundException } from "@/exceptions";
 
 @injectable()
 export class UpdateProfileService {
-  constructor(@inject(UserRepository) private readonly userRepository: UserRepository) { }
+  constructor(@inject(UserRepository) private readonly userRepository: UserRepository) {}
 
   public async execute(userId: string, data: { name?: string; currentPassword?: string; newPassword?: string }) {
     const { name, currentPassword, newPassword } = data;
@@ -32,9 +32,7 @@ export class UpdateProfileService {
     }
 
     // Handle name update if provided
-    const profileData = name !== undefined
-      ? await this.userRepository.updateProfile(userId, { name })
-      : { id: user.id, name: user.name, email: user.email, role: user.role };
+    const profileData = name !== undefined ? await this.userRepository.updateProfile(userId, { name }) : { id: user.id, name: user.name, email: user.email, role: user.role };
 
     return {
       message: "Profile updated successfully",

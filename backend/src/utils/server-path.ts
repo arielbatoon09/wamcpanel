@@ -38,6 +38,7 @@ export function getServerDirectorySize(serverId: string): number {
       }
     } catch (err) {
       // Ignore directories or files we cannot access
+      console.log(err);
     }
   }
 

@@ -7,9 +7,7 @@ import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class PluginController extends BaseController {
-  constructor(
-    @inject(PluginService) private readonly pluginService: PluginService
-  ) {
+  constructor(@inject(PluginService) private readonly pluginService: PluginService) {
     super();
   }
 

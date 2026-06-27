@@ -35,8 +35,9 @@ export function LoginForm() {
           toast.success("Successfully logged in!");
           window.location.href = "/servers";
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || "Login failed. Please try again.");
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+          toast.error(axiosError.response?.data?.message || axiosError.message || "Login failed. Please try again.");
         },
       });
     },
@@ -55,9 +56,8 @@ export function LoginForm() {
     >
       <FieldGroup>
         {/* Email */}
-        <form.Field
-          name="email"
-          children={(field) => {
+        <form.Field name="email">
+          {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
@@ -80,12 +80,11 @@ export function LoginForm() {
               </Field>
             );
           }}
-        />
+        </form.Field>
 
         {/* Password */}
-        <form.Field
-          name="password"
-          children={(field) => {
+        <form.Field name="password">
+          {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
@@ -115,7 +114,7 @@ export function LoginForm() {
               </Field>
             );
           }}
-        />
+        </form.Field>
       </FieldGroup>
 
       {/* Submit */}

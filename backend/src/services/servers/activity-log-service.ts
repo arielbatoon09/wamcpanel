@@ -73,7 +73,7 @@ export class ActivityLogService {
         }
       }
       logs.push(logEntry);
-      
+
       // Limit to last 1000 entries to prevent files growing infinitely
       if (logs.length > 1000) {
         logs = logs.slice(logs.length - 1000);

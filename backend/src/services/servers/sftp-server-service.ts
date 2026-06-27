@@ -1,6 +1,6 @@
 import { injectable, inject } from "tsyringe";
 import ssh2 from "ssh2";
-import type { Connection, Session, AuthContext, SFTPWrapper, Attributes } from "ssh2";
+import type { AuthContext, SFTPWrapper, Attributes } from "ssh2";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
@@ -53,43 +53,49 @@ export class SftpServerService {
   public start() {
     const port = parseInt(process.env.SFTP_PORT || "2022", 10);
 
-    this.server = new ssh2.Server({
-      hostKeys: [this.hostKey],
-    }, (client) => {
-      let authenticatedUser: any = null;
-      let targetServerId: string | null = null;
-
-      client.on("authentication", (ctx) => {
-        this.handleAuth(ctx).then((res) => {
-          if (res) {
-            authenticatedUser = res.user;
-            targetServerId = res.serverId;
-            ctx.accept();
-          } else {
-            ctx.reject();
-          }
-        }).catch((err) => {
-          console.error("SFTP Auth error:", err);
-          ctx.reject();
+    this.server = new ssh2.Server(
+      {
+        hostKeys: [this.hostKey],
+      },
+      client => {
+        let authenticatedUser: any = null;
+        let targetServerId: string | null = null;
+        console.log(authenticatedUser);
+        client.on("authentication", ctx => {
+          this.handleAuth(ctx)
+            .then(res => {
+              if (res) {
+                authenticatedUser = res.user;
+                targetServerId = res.serverId;
+                ctx.accept();
+              } else {
+                ctx.reject();
+              }
+            })
+            .catch(err => {
+              console.error("SFTP Auth error:", err);
+              ctx.reject();
+            });
         });
-      });
 
-      client.on("ready", () => {
-        client.on("session", (accept, reject) => {
-          const session = accept();
-          session.on("sftp", (acceptSftp, rejectSftp) => {
-            const sftpStream = acceptSftp();
-            if (targetServerId) {
-              this.setupSftpHandlers(sftpStream, targetServerId);
-            }
+        client.on("ready", () => {
+          client.on("session", (accept, _reject) => {
+            const session = accept();
+            session.on("sftp", (acceptSftp, _rejectSftp) => {
+              const sftpStream = acceptSftp();
+              if (targetServerId) {
+                this.setupSftpHandlers(sftpStream, targetServerId);
+              }
+            });
           });
         });
-      });
 
-      client.on("error", (err) => {
-        // Suppress connection-level errors (client disconnects, resets)
-      });
-    });
+        client.on("error", err => {
+          // Suppress connection-level errors (client disconnects, resets)
+          console.error(err);
+        });
+      }
+    );
 
     this.server.listen(port, "0.0.0.0", () => {
       console.log(`SFTP Server listening on port ${port}`);
@@ -156,7 +162,7 @@ export class SftpServerService {
       BAD_MESSAGE: 5,
       NO_CONNECTION: 6,
       CONNECTION_LOST: 7,
-      OP_UNSUPPORTED: 8
+      OP_UNSUPPORTED: 8,
     };
 
     const formatAttrs = (stats: fs.Stats): Attributes => ({
@@ -165,19 +171,19 @@ export class SftpServerService {
       gid: stats.gid ?? 0,
       size: stats.size,
       atime: Math.floor(stats.atimeMs / 1000),
-      mtime: Math.floor(stats.mtimeMs / 1000)
+      mtime: Math.floor(stats.mtimeMs / 1000),
     });
 
     const formatLongname = (name: string, stats: fs.Stats): string => {
       const modeStr = stats.isDirectory() ? "d" : "-";
-      const permissions = (stats.mode & 0o777).toString(8).split("").map(p => {
-        const val = parseInt(p, 10);
-        return [
-          val & 4 ? "r" : "-",
-          val & 2 ? "w" : "-",
-          val & 1 ? "x" : "-"
-        ].join("");
-      }).join("");
+      const permissions = (stats.mode & 0o777)
+        .toString(8)
+        .split("")
+        .map(p => {
+          const val = parseInt(p, 10);
+          return [val & 4 ? "r" : "-", val & 2 ? "w" : "-", val & 1 ? "x" : "-"].join("");
+        })
+        .join("");
 
       const size = stats.size.toString().padStart(8);
       const mtime = stats.mtime.toDateString();
@@ -190,22 +196,24 @@ export class SftpServerService {
       if (pathName !== "." && pathName !== "./" && pathName !== "/") {
         resolved = path.normalize(pathName).replace(/\\/g, "/");
       }
-      sftp.name(id, [{
-        filename: resolved,
-        longname: resolved,
-        attrs: {
-          mode: 0o40755,
-          uid: 0,
-          gid: 0,
-          size: 0,
-          atime: Math.floor(Date.now() / 1000),
-          mtime: Math.floor(Date.now() / 1000)
-        }
-      }]);
+      sftp.name(id, [
+        {
+          filename: resolved,
+          longname: resolved,
+          attrs: {
+            mode: 0o40755,
+            uid: 0,
+            gid: 0,
+            size: 0,
+            atime: Math.floor(Date.now() / 1000),
+            mtime: Math.floor(Date.now() / 1000),
+          },
+        },
+      ]);
     });
 
     // STAT and LSTAT
-    const handleStat = (id: any, pathName: string, callback: any) => {
+    const handleStat = (id: any, pathName: string, _callback: any) => {
       const fullPath = resolvePath(pathName);
       fs.stat(fullPath, (err, stats) => {
         if (err) {
@@ -261,13 +269,13 @@ export class SftpServerService {
             return {
               filename: entry.name,
               longname: formatLongname(entry.name, stats),
-              attrs: formatAttrs(stats)
+              attrs: formatAttrs(stats),
             };
           });
 
           const handle = crypto.randomBytes(4);
           this.handles.set(handle.toString("hex"), {
-            dirContext: { files, index: 0 }
+            dirContext: { files, index: 0 },
           });
           sftp.handle(id, handle);
         }
@@ -293,7 +301,7 @@ export class SftpServerService {
     });
 
     // OPEN
-    sftp.on("OPEN", (id: number, pathName: string, flagsMask: number, attrs: Attributes) => {
+    sftp.on("OPEN", (id: number, pathName: string, flagsMask: number, _attrs: Attributes) => {
       const fullPath = resolvePath(pathName);
 
       // Determine flags
@@ -357,7 +365,7 @@ export class SftpServerService {
         return sftp.status(id, STATUS_CODE.FAILURE);
       }
 
-      fs.write(info.fd, data, 0, data.length, offset, (err) => {
+      fs.write(info.fd, data, 0, data.length, offset, err => {
         if (err) {
           sftp.status(id, STATUS_CODE.FAILURE);
         } else {
@@ -385,7 +393,7 @@ export class SftpServerService {
     // REMOVE
     sftp.on("REMOVE", (id: number, pathName: string) => {
       const fullPath = resolvePath(pathName);
-      fs.unlink(fullPath, (err) => {
+      fs.unlink(fullPath, err => {
         if (err) {
           sftp.status(id, STATUS_CODE.FAILURE);
         } else {
@@ -397,7 +405,7 @@ export class SftpServerService {
     // RMDIR
     sftp.on("RMDIR", (id: number, pathName: string) => {
       const fullPath = resolvePath(pathName);
-      fs.rmdir(fullPath, (err) => {
+      fs.rmdir(fullPath, err => {
         if (err) {
           sftp.status(id, STATUS_CODE.FAILURE);
         } else {
@@ -407,9 +415,9 @@ export class SftpServerService {
     });
 
     // MKDIR
-    sftp.on("MKDIR", (id: number, pathName: string, attrs: Attributes) => {
+    sftp.on("MKDIR", (id: number, pathName: string, _attrs: Attributes) => {
       const fullPath = resolvePath(pathName);
-      fs.mkdir(fullPath, (err) => {
+      fs.mkdir(fullPath, err => {
         if (err) {
           sftp.status(id, STATUS_CODE.FAILURE);
         } else {
@@ -422,7 +430,7 @@ export class SftpServerService {
     sftp.on("RENAME", (id: number, oldPath: string, newPath: string) => {
       const fullOldPath = resolvePath(oldPath);
       const fullNewPath = resolvePath(newPath);
-      fs.rename(fullOldPath, fullNewPath, (err) => {
+      fs.rename(fullOldPath, fullNewPath, err => {
         if (err) {
           sftp.status(id, STATUS_CODE.FAILURE);
         } else {

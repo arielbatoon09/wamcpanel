@@ -7,9 +7,7 @@ import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class FileController extends BaseController {
-  constructor(
-    @inject(FileService) private readonly fileService: FileService
-  ) {
+  constructor(@inject(FileService) private readonly fileService: FileService) {
     super();
   }
 

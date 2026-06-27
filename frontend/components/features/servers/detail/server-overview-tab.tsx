@@ -29,7 +29,8 @@ export function ServerOverviewTab({ id }: { id: string }) {
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
 
   useEffect(() => {
-    activityLogService.list(id)
+    activityLogService
+      .list(id)
       .then((data) => {
         setLogs(data.slice(0, 3));
       })
@@ -71,15 +72,17 @@ export function ServerOverviewTab({ id }: { id: string }) {
           <div className="shrink-0">
             <h4 className="mb-2 border-b border-border/40 pb-1 font-mono text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">Node & Host Specs</h4>
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-              <div className="relative group rounded-lg border border-border/40 bg-secondary/30 p-2.5">
+              <div className="group relative rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Server Connection (IP:Port)</span>
-                <span className="block truncate font-bold text-foreground pr-6">{server.host}:{server.port}</span>
+                <span className="block truncate pr-6 font-bold text-foreground">
+                  {server.host}:{server.port}
+                </span>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(`${server.host}:${server.port}`);
                     toast.success("Server address copied to clipboard!");
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-primary/10 p-1 hover:bg-primary/20 text-primary cursor-pointer transition-all opacity-0 group-hover:opacity-100"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded bg-primary/10 p-1 text-primary opacity-0 transition-all group-hover:opacity-100 hover:bg-primary/20"
                   title="Copy IP:Port"
                 >
                   <Copy className="h-3.5 w-3.5" />
@@ -87,17 +90,17 @@ export function ServerOverviewTab({ id }: { id: string }) {
               </div>
               <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Engine Software</span>
-                <span className="block font-bold text-foreground truncate">
+                <span className="block truncate font-bold text-foreground">
                   {server.software} ({server.version})
                 </span>
               </div>
               <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Processor</span>
-                <span className="block font-bold text-foreground truncate">{specs?.cpuModel || "Loading..."}</span>
+                <span className="block truncate font-bold text-foreground">{specs?.cpuModel || "Loading..."}</span>
               </div>
               <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Operating System</span>
-                <span className="block font-bold text-foreground truncate">{specs?.osType || "Loading..."}</span>
+                <span className="block truncate font-bold text-foreground">{specs?.osType || "Loading..."}</span>
               </div>
             </div>
           </div>
@@ -131,39 +134,19 @@ export function ServerOverviewTab({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 p-2">
                 <span className="text-[11px] font-semibold text-foreground/80">PVP Combat</span>
-                <Checkbox
-                  id="ov-pvp"
-                  checked={pvp}
-                  disabled={updateMutation.isPending}
-                  onCheckedChange={() => handleToggle("pvp", pvp)}
-                />
+                <Checkbox id="ov-pvp" checked={pvp} disabled={updateMutation.isPending} onCheckedChange={() => handleToggle("pvp", pvp)} />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 p-2">
                 <span className="text-[11px] font-semibold text-foreground/80">Server Whitelist</span>
-                <Checkbox
-                  id="ov-whitelist"
-                  checked={whitelist}
-                  disabled={updateMutation.isPending}
-                  onCheckedChange={() => handleToggle("white-list", whitelist)}
-                />
+                <Checkbox id="ov-whitelist" checked={whitelist} disabled={updateMutation.isPending} onCheckedChange={() => handleToggle("white-list", whitelist)} />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 p-2">
                 <span className="text-[11px] font-semibold text-foreground/80">Online Mode</span>
-                <Checkbox
-                  id="ov-online"
-                  checked={onlineMode}
-                  disabled={updateMutation.isPending}
-                  onCheckedChange={() => handleToggle("online-mode", onlineMode)}
-                />
+                <Checkbox id="ov-online" checked={onlineMode} disabled={updateMutation.isPending} onCheckedChange={() => handleToggle("online-mode", onlineMode)} />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-border/30 bg-secondary/20 p-2">
                 <span className="text-[11px] font-semibold text-foreground/80">Allow Flight</span>
-                <Checkbox
-                  id="ov-flight"
-                  checked={allowFlight}
-                  disabled={updateMutation.isPending}
-                  onCheckedChange={() => handleToggle("allow-flight", allowFlight)}
-                />
+                <Checkbox id="ov-flight" checked={allowFlight} disabled={updateMutation.isPending} onCheckedChange={() => handleToggle("allow-flight", allowFlight)} />
               </div>
             </div>
           </div>
@@ -173,18 +156,12 @@ export function ServerOverviewTab({ id }: { id: string }) {
             <h4 className="mb-2 shrink-0 border-b border-border/40 pb-1 font-mono text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">Recent Panel Activity</h4>
             <div className="mt-1 flex-1 space-y-2 overflow-y-auto pr-1 font-mono text-[11px]">
               {logs.length === 0 ? (
-                <div className="flex h-16 items-center justify-center text-muted-foreground/50">
-                  No recent activity logs.
-                </div>
+                <div className="flex h-16 items-center justify-center text-muted-foreground/50">No recent activity logs.</div>
               ) : (
                 logs.map((log) => (
                   <div key={log.id} className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
-                    <span className="text-foreground/80 truncate pr-2">
-                      {log.message}
-                    </span>
-                    <span className="shrink-0 text-[9px] text-muted-foreground">
-                      {formatRelativeTime(log.timestamp)}
-                    </span>
+                    <span className="truncate pr-2 text-foreground/80">{log.message}</span>
+                    <span className="shrink-0 text-[9px] text-muted-foreground">{formatRelativeTime(log.timestamp)}</span>
                   </div>
                 ))
               )}
@@ -198,4 +175,3 @@ export function ServerOverviewTab({ id }: { id: string }) {
     </div>
   );
 }
-

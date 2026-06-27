@@ -76,8 +76,9 @@ export function SignupForm() {
             }
           );
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || "An error occurred during onboarding.");
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+          toast.error(axiosError.response?.data?.message || axiosError.message || "An error occurred during onboarding.");
         },
       });
     },
@@ -96,9 +97,8 @@ export function SignupForm() {
     >
       <FieldGroup>
         {/* Display Name */}
-        <form.Field
-          name="name"
-          children={(field) => {
+        <form.Field name="name">
+          {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
@@ -121,12 +121,11 @@ export function SignupForm() {
               </Field>
             );
           }}
-        />
+        </form.Field>
 
         {/* Email */}
-        <form.Field
-          name="email"
-          children={(field) => {
+        <form.Field name="email">
+          {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             return (
               <Field data-invalid={isInvalid} className="space-y-1.5">
@@ -149,12 +148,11 @@ export function SignupForm() {
               </Field>
             );
           }}
-        />
+        </form.Field>
 
         {/* Password */}
-        <form.Field
-          name="password"
-          children={(field) => {
+        <form.Field name="password">
+          {(field) => {
             const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
             const password = field.state.value;
             const passwordStrength = PASSWORD_RULES.filter((r) => r.test(password)).length;
@@ -175,7 +173,7 @@ export function SignupForm() {
                     autoComplete="new-password"
                     placeholder="Create a strong password"
                     value={password}
-                    onBlur={(e) => {
+                    onBlur={() => {
                       field.handleBlur();
                       setFocused(false);
                     }}
@@ -221,7 +219,7 @@ export function SignupForm() {
               </Field>
             );
           }}
-        />
+        </form.Field>
       </FieldGroup>
 
       {/* Submit */}

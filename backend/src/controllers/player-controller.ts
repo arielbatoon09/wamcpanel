@@ -6,9 +6,7 @@ import { PlayerService } from "@/services/servers/player-service";
 
 @injectable()
 export class PlayerController extends BaseController {
-  constructor(
-    @inject(PlayerService) private readonly playerService: PlayerService
-  ) {
+  constructor(@inject(PlayerService) private readonly playerService: PlayerService) {
     super();
   }
 

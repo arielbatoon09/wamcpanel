@@ -8,7 +8,7 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "node_modules/**",
-      "src/generated/**",
+      "generated/**",
       "coverage/**",
       ".env",
       "*.sql",

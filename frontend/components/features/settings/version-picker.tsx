@@ -35,12 +35,7 @@ interface VersionPickerProps {
   isLoading: boolean;
 }
 
-export function VersionPicker({
-  versions,
-  value,
-  onChange,
-  isLoading,
-}: VersionPickerProps) {
+export function VersionPicker({ versions, value, onChange, isLoading }: VersionPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [openUp, setOpenUp] = useState(false);
@@ -96,15 +91,13 @@ export function VersionPicker({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 w-full items-center justify-between rounded-lg border border-border bg-background px-3 text-sm transition-colors hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+        className="flex h-10 w-full cursor-pointer items-center justify-between rounded-lg border border-border bg-background px-3 text-sm transition-colors hover:bg-muted/30 focus:ring-2 focus:ring-primary/40 focus:outline-none"
       >
         <span className={cn("flex items-center gap-2", !value && "text-muted-foreground")}>
           {value ? (
             <>
               <span className="font-mono font-semibold">{value}</span>
-              <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">
-                {javaLabel(java)}
-              </span>
+              <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary">{javaLabel(java)}</span>
             </>
           ) : (
             "Select version..."
@@ -114,12 +107,7 @@ export function VersionPicker({
       </button>
 
       {open && (
-        <div
-          className={cn(
-            "absolute right-0 left-0 z-50 overflow-hidden rounded-xl border border-border bg-card shadow-xl",
-            openUp ? "bottom-full mb-1.5" : "top-full mt-1.5"
-          )}
-        >
+        <div className={cn("absolute right-0 left-0 z-50 overflow-hidden rounded-xl border border-border bg-card shadow-xl", openUp ? "bottom-full mb-1.5" : "top-full mt-1.5")}>
           {/* Search */}
           <div className="border-b border-border p-2">
             <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3">
@@ -127,7 +115,7 @@ export function VersionPicker({
               <input
                 autoFocus
                 type="text"
-                className="h-8 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/50 text-foreground"
+                className="h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground/50"
                 placeholder="Search versions..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -140,7 +128,7 @@ export function VersionPicker({
             {isLoading ? (
               <div className="py-6 text-center text-xs text-muted-foreground">Loading versions…</div>
             ) : filtered.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">No versions match "{query}"</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">No versions match &quot;{query}&quot;</div>
             ) : (
               filtered.map((v) => {
                 const rec = recommendedJava(v);
@@ -155,17 +143,12 @@ export function VersionPicker({
                       setQuery("");
                     }}
                     className={cn(
-                      "flex w-full items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/40 cursor-pointer",
-                      isSelected && "bg-primary/8 text-primary font-bold"
+                      "flex w-full cursor-pointer items-center justify-between px-4 py-2.5 text-left text-sm transition-colors hover:bg-muted/40",
+                      isSelected && "bg-primary/8 font-bold text-primary"
                     )}
                   >
                     <span className="font-mono">{v}</span>
-                    <span className={cn(
-                      "rounded px-1.5 py-0.5 font-mono text-[10px] font-bold",
-                      isSelected ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                    )}>
-                      {javaLabel(rec)}
-                    </span>
+                    <span className={cn("rounded px-1.5 py-0.5 font-mono text-[10px] font-bold", isSelected ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>{javaLabel(rec)}</span>
                   </button>
                 );
               })

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -24,26 +24,28 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
 
   const isDirty = content !== originalContent;
 
-  useEffect(() => {
-    if (filePath) {
-      loadFile();
-    }
-  }, [filePath]);
-
-  const loadFile = async () => {
+  const loadFile = useCallback(async () => {
     setLoading(true);
     setShowConfirmDiscard(false);
     try {
       const fileContent = await fileService.view(serverId, filePath);
       setContent(fileContent);
       setOriginalContent(fileContent);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load file content");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to load file content");
       onClose();
     } finally {
       setLoading(false);
     }
-  };
+  }, [serverId, filePath, onClose]);
+
+  useEffect(() => {
+    if (filePath) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadFile();
+    }
+  }, [filePath, loadFile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -52,8 +54,9 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
       setOriginalContent(content);
       toast.success("File saved successfully");
       setShowConfirmDiscard(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to save file");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to save file");
     } finally {
       setSaving(false);
     }
@@ -106,19 +109,12 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
       {/* Editor Header */}
       <div className="mb-4 flex shrink-0 items-center justify-between border-b border-border pb-3">
         <div className="flex flex-col gap-1">
-          <h3 className="font-mono text-sm font-bold tracking-wider uppercase text-foreground">
-            Editing: {fileName}
-          </h3>
+          <h3 className="font-mono text-sm font-bold tracking-wider text-foreground uppercase">Editing: {fileName}</h3>
           <span className="font-mono text-[10px] text-muted-foreground">
-            Path: {filePath} {isDirty && <span className="ml-1 text-amber-500 font-bold">* Unsaved Changes</span>}
+            Path: {filePath} {isDirty && <span className="ml-1 font-bold text-amber-500">* Unsaved Changes</span>}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRequestClose}
-          className="h-8 text-xs font-semibold cursor-pointer text-muted-foreground hover:text-foreground gap-1"
-        >
+        <Button variant="ghost" size="sm" onClick={handleRequestClose} className="h-8 cursor-pointer gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground">
           <X className="h-3.5 w-3.5" />
           Close
         </Button>
@@ -132,26 +128,16 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
       ) : (
         <div className="flex flex-1 flex-col gap-4 overflow-hidden">
           {showConfirmDiscard && (
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400 animate-in slide-in-from-top duration-200">
+            <div className="flex animate-in items-center justify-between gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400 duration-200 slide-in-from-top">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
                 <span>You have unsaved changes. Closing will discard them.</span>
               </div>
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowConfirmDiscard(false)}
-                  className="h-7 border-amber-500/20 text-amber-400 hover:bg-amber-500/20"
-                >
+                <Button size="sm" variant="outline" onClick={() => setShowConfirmDiscard(false)} className="h-7 border-amber-500/20 text-amber-400 hover:bg-amber-500/20">
                   Keep Editing
                 </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={onClose}
-                  className="h-7 bg-rose-600 hover:bg-rose-500"
-                >
+                <Button size="sm" variant="destructive" onClick={onClose} className="h-7 bg-rose-600 hover:bg-rose-500">
                   Discard Changes
                 </Button>
               </div>
@@ -159,7 +145,7 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
           )}
 
           {/* Monaco Editor Container */}
-          <div className="relative flex-1 overflow-hidden rounded-lg border border-border/80 bg-zinc-950 p-2 min-h-[350px]">
+          <div className="relative min-h-[350px] flex-1 overflow-hidden rounded-lg border border-border/80 bg-zinc-950 p-2">
             <Editor
               height="100%"
               language={getLanguage(fileName)}
@@ -182,20 +168,16 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
             />
           </div>
 
-          <div className="flex justify-between items-center shrink-0 border-t border-border/60 pt-3">
+          <div className="flex shrink-0 items-center justify-between border-t border-border/60 pt-3">
             <span className="font-mono text-[10px] text-muted-foreground uppercase">
               Type: {getLanguage(fileName).toUpperCase()} | Status: {isDirty ? "Modified" : "Saved"}
             </span>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleRequestClose} disabled={saving} className="h-8 text-xs font-semibold cursor-pointer">
+              <Button variant="outline" size="sm" onClick={handleRequestClose} disabled={saving} className="h-8 cursor-pointer text-xs font-semibold">
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving || !isDirty} className="h-8 text-xs font-semibold gap-1 cursor-pointer">
-                {saving ? (
-                  <Spinner className="h-3 w-3" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
-                )}
+              <Button size="sm" onClick={handleSave} disabled={saving || !isDirty} className="h-8 cursor-pointer gap-1 text-xs font-semibold">
+                {saving ? <Spinner className="h-3 w-3" /> : <Save className="h-3.5 w-3.5" />}
                 Save Changes
               </Button>
             </div>

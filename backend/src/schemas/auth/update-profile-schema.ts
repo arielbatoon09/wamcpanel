@@ -8,7 +8,7 @@ export const updateProfileSchema = z.object({
       newPassword: z.string().min(8, "New password must be at least 8 characters").optional(),
     })
     .refine(
-      (data) => {
+      data => {
         // If newPassword is provided, currentPassword must also be provided
         if (data.newPassword && !data.currentPassword) return false;
         return true;

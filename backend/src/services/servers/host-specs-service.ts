@@ -1,7 +1,6 @@
 import { injectable } from "tsyringe";
 import os from "os";
 import fs from "fs";
-import path from "path";
 
 export interface HostSpecsResponse {
   cpuModel: string;
@@ -43,6 +42,7 @@ export class HostSpecsService {
         freeDisk = stats.bfree * blockSize;
       } catch (err) {
         // Fallback to default mock disk
+        console.log(err);
       }
     }
 

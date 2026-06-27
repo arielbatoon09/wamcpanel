@@ -1,3 +1,5 @@
+"use client";
+
 import { useHostSpecs } from "@/services/server-service";
 import { Spinner } from "@/components/ui/spinner";
 import { useState, useEffect } from "react";
@@ -73,7 +75,9 @@ export function MetricsSection() {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">Host Memory</p>
-              <h3 className="mt-1 font-mono text-xl font-bold">{usedRamGB.toFixed(1)} / {totalRamGB.toFixed(1)} GB</h3>
+              <h3 className="mt-1 font-mono text-xl font-bold">
+                {usedRamGB.toFixed(1)} / {totalRamGB.toFixed(1)} GB
+              </h3>
             </div>
             <div className="rounded-lg bg-secondary p-2">
               <HardDrive className="h-4 w-4 text-primary" />
@@ -88,7 +92,9 @@ export function MetricsSection() {
           <div className="flex items-start justify-between">
             <div>
               <p className="font-mono text-[10px] tracking-wider text-muted-foreground uppercase">SSD Storage</p>
-              <h3 className="mt-1 font-mono text-xl font-bold">{usedDiskGB.toFixed(1)} / {totalDiskGB.toFixed(1)} GB</h3>
+              <h3 className="mt-1 font-mono text-xl font-bold">
+                {usedDiskGB.toFixed(1)} / {totalDiskGB.toFixed(1)} GB
+              </h3>
             </div>
             <div className="rounded-lg bg-secondary p-2">
               <Database className="h-4 w-4 text-primary" />

@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 @injectable()
 export class UserRepository {
-  constructor(@inject("PrismaClient") private readonly db: PrismaClient) { }
+  constructor(@inject("PrismaClient") private readonly db: PrismaClient) {}
 
   async findById(id: string) {
     return await this.db.user.findFirst({

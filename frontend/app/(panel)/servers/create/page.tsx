@@ -1,22 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Search,
-  Terminal,
-  Cpu,
-  Database,
-  HardDrive,
-  Globe,
-  Rocket,
-  Server,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Terminal, Cpu, Database, HardDrive, Globe, Rocket, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,24 +27,19 @@ const SOFTWARE_CATALOGUE: {
   tag?: string;
   defaultPort?: number;
 }[] = [
-    { key: "Paper", label: "Paper", description: "Vanilla but better — huge plugin ecosystem & optimisation.", icon: "/icons/paper.webp", tag: "Recommended" },
-    { key: "Vanilla", label: "Vanilla", description: "Pure Minecraft from Mojang — no plugins or mods.", icon: "/icons/vanilla.webp" },
-    { key: "Fabric", label: "Fabric", description: "Lightweight, fast-updating modding platform.", icon: "/icons/fabric.webp" },
-    { key: "Forge", label: "Forge", description: "The classic, most popular option for mods.", icon: "/icons/forge.webp" },
-    { key: "NeoForge", label: "NeoForge", description: "A community fork of Forge with active development.", icon: "/icons/neoforge.webp" },
-    { key: "Bedrock", label: "Bedrock", description: "Official Bedrock edition — supports PE/Console players.", icon: "/icons/bedrock.webp" },
-    { key: "Velocity", label: "Velocity", description: "High-performance proxy for routing between servers.", icon: "/icons/velocity.png", defaultPort: 25577 },
-  ];
+  { key: "Paper", label: "Paper", description: "Vanilla but better — huge plugin ecosystem & optimisation.", icon: "/icons/paper.webp", tag: "Recommended" },
+  { key: "Vanilla", label: "Vanilla", description: "Pure Minecraft from Mojang — no plugins or mods.", icon: "/icons/vanilla.webp" },
+  { key: "Fabric", label: "Fabric", description: "Lightweight, fast-updating modding platform.", icon: "/icons/fabric.webp" },
+  { key: "Forge", label: "Forge", description: "The classic, most popular option for mods.", icon: "/icons/forge.webp" },
+  { key: "NeoForge", label: "NeoForge", description: "A community fork of Forge with active development.", icon: "/icons/neoforge.webp" },
+  { key: "Bedrock", label: "Bedrock", description: "Official Bedrock edition — supports PE/Console players.", icon: "/icons/bedrock.webp" },
+  { key: "Velocity", label: "Velocity", description: "High-performance proxy for routing between servers.", icon: "/icons/velocity.png", defaultPort: 25577 },
+];
 
 // ─────────────────────────────────────────────────────────────────
 // Java version recommendation
 // ─────────────────────────────────────────────────────────────────
-import {
-  VersionPicker,
-  recommendedJava,
-  isJavaLocked,
-  javaLabel,
-} from "@/components/features/settings/version-picker";
+import { VersionPicker, recommendedJava, isJavaLocked, javaLabel } from "@/components/features/settings/version-picker";
 
 // ─────────────────────────────────────────────────────────────────
 // Step indicator
@@ -83,13 +65,9 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
               >
                 {done ? <Check className="h-4 w-4" /> : step}
               </div>
-              <span className={cn("text-[10px] font-semibold tracking-wide", active ? "text-primary" : "text-muted-foreground")}>
-                {labels[i]}
-              </span>
+              <span className={cn("text-[10px] font-semibold tracking-wide", active ? "text-primary" : "text-muted-foreground")}>{labels[i]}</span>
             </div>
-            {step < total && (
-              <div className={cn("mx-3 mb-4 h-px w-16 transition-colors duration-300", done ? "bg-primary" : "bg-border")} />
-            )}
+            {step < total && <div className={cn("mx-3 mb-4 h-px w-16 transition-colors duration-300", done ? "bg-primary" : "bg-border")} />}
           </div>
         );
       })}
@@ -129,8 +107,9 @@ export default function CreateServerPage() {
           toast.success("Server deployed successfully!");
           router.push("/servers");
         },
-        onError: (err: any) => {
-          toast.error(err.response?.data?.message || err.message || "Failed to create server");
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+          toast.error(axiosError.response?.data?.message || axiosError.message || "Failed to create server");
         },
       });
     },
@@ -146,7 +125,6 @@ export default function CreateServerPage() {
   const watchedHost = useStore(form.store, (s) => s.values.host);
 
   const isVelocity = watchedSoftware === "Velocity";
-  const softwareMeta = SOFTWARE_CATALOGUE.find((s) => s.key === watchedSoftware);
 
   // Auto-set port + resources when software changes
   useEffect(() => {
@@ -159,21 +137,21 @@ export default function CreateServerPage() {
       form.setFieldValue("ramLimit", 4096);
       form.setFieldValue("cpuLimit", 200);
     }
-  }, [watchedSoftware]);
+  }, [watchedSoftware, form]);
 
   // Auto-set Java when version changes
   useEffect(() => {
     if (watchedVersion) {
       form.setFieldValue("javaVersion", recommendedJava(watchedVersion));
     }
-  }, [watchedVersion]);
+  }, [watchedVersion, form]);
 
   // Auto-select first version when list loads
   useEffect(() => {
     if (versionsList.length > 0 && !watchedVersion) {
       form.setFieldValue("version", versionsList[0]);
     }
-  }, [versionsList]);
+  }, [versionsList, watchedVersion, form]);
 
   // Step 1 validation: name ≥ 3, host non-empty
   const step1Valid = watchedName.trim().length >= 3 && watchedHost.trim().length >= 3;
@@ -202,10 +180,15 @@ export default function CreateServerPage() {
         </div>
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          form.handleSubmit();
+        }}
+      >
         {/* ──────────── STEP 1 — Server Details ──────────── */}
         {step === 1 && (
-          <div className="animate-in fade-in slide-in-from-right-4 space-y-6 duration-300">
+          <div className="animate-in space-y-6 duration-300 fade-in slide-in-from-right-4">
             <div className="rounded-xl border border-border/80 bg-card/65 p-6 backdrop-blur-md">
               <div className="mb-5 flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -224,17 +207,8 @@ export default function CreateServerPage() {
                       <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                         Server Name <span className="text-destructive">*</span>
                       </label>
-                      <Input
-                        id="name"
-                        placeholder="Survival Realm"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                        className="h-10"
-                      />
-                      {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                        <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>
-                      )}
+                      <Input id="name" placeholder="Survival Realm" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} className="h-10" />
+                      {field.state.meta.isTouched && field.state.meta.errors.length > 0 && <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>}
                     </div>
                   )}
                 </form.Field>
@@ -262,14 +236,7 @@ export default function CreateServerPage() {
                         <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                           Host / IP <span className="text-destructive">*</span>
                         </label>
-                        <Input
-                          id="host"
-                          placeholder="localhost"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          onBlur={field.handleBlur}
-                          className="h-10 font-mono"
-                        />
+                        <Input id="host" placeholder="localhost" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} onBlur={field.handleBlur} className="h-10 font-mono" />
                       </div>
                     )}
                   </form.Field>
@@ -278,17 +245,8 @@ export default function CreateServerPage() {
                     {(field) => (
                       <div className="space-y-3">
                         <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Port</label>
-                        <Input
-                          id="port"
-                          type="number"
-                          value={field.state.value}
-                          onChange={(e) => field.handleChange(Number(e.target.value))}
-                          onBlur={field.handleBlur}
-                          className="h-10 font-mono"
-                        />
-                        {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                          <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>
-                        )}
+                        <Input id="port" type="number" value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} onBlur={field.handleBlur} className="h-10 font-mono" />
+                        {field.state.meta.isTouched && field.state.meta.errors.length > 0 && <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>}
                       </div>
                     )}
                   </form.Field>
@@ -298,12 +256,7 @@ export default function CreateServerPage() {
 
             {/* Step 1 nav */}
             <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={() => setStep(2)}
-                disabled={!step1Valid}
-                className="h-10 cursor-pointer gap-2 px-6 font-semibold"
-              >
+              <Button type="button" onClick={() => setStep(2)} disabled={!step1Valid} className="h-10 cursor-pointer gap-2 px-6 font-semibold">
                 Continue <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -312,7 +265,7 @@ export default function CreateServerPage() {
 
         {/* ──────────── STEP 2 — Server Type ──────────── */}
         {step === 2 && (
-          <div className="animate-in fade-in slide-in-from-right-4 space-y-6 duration-300">
+          <div className="animate-in space-y-6 duration-300 fade-in slide-in-from-right-4">
             {/* Software picker */}
             <div className="rounded-xl border border-border/80 bg-card/65 p-6 backdrop-blur-md">
               <div className="mb-5 flex items-center gap-3">
@@ -366,29 +319,18 @@ export default function CreateServerPage() {
                 <div className="space-y-4">
                   <div className="space-y-3">
                     <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Game Version</label>
-                    <VersionPicker
-                      versions={versionsList}
-                      value={watchedVersion}
-                      onChange={(v) => form.setFieldValue("version", v)}
-                      isLoading={versionsLoading}
-                    />
+                    <VersionPicker versions={versionsList} value={watchedVersion} onChange={(v) => form.setFieldValue("version", v)} isLoading={versionsLoading} />
                   </div>
 
                   <div className="space-y-3">
                     <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                       Java Runtime
                       {watchedVersion && (
-                        <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary normal-case">
-                          Recommended: {javaLabel(recommendedJava(watchedVersion))}
-                        </span>
+                        <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary normal-case">Recommended: {javaLabel(recommendedJava(watchedVersion))}</span>
                       )}
                     </label>
-                    <Select
-                      value={watchedJava}
-                      onValueChange={(v) => form.setFieldValue("javaVersion", v as "17" | "21" | "25")}
-                      disabled={javaLocked}
-                    >
-                      <SelectTrigger className={cn("h-10 cursor-pointer", javaLocked && "opacity-60 cursor-not-allowed")}>
+                    <Select value={watchedJava} onValueChange={(v) => form.setFieldValue("javaVersion", v as "17" | "21" | "25")} disabled={javaLocked}>
+                      <SelectTrigger className={cn("h-10 cursor-pointer", javaLocked && "cursor-not-allowed opacity-60")}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -403,11 +345,7 @@ export default function CreateServerPage() {
                         </SelectItem>
                       </SelectContent>
                     </Select>
-                    {javaLocked && (
-                      <p className="text-[11px] text-amber-500">
-                        ⚠ Java 25 is required for Minecraft {watchedVersion}+ and cannot be changed.
-                      </p>
-                    )}
+                    {javaLocked && <p className="text-[11px] text-amber-500">⚠ Java 25 is required for Minecraft {watchedVersion}+ and cannot be changed.</p>}
                   </div>
                 </div>
               </div>
@@ -427,7 +365,7 @@ export default function CreateServerPage() {
 
         {/* ──────────── STEP 3 — Resources ──────────── */}
         {step === 3 && (
-          <div className="animate-in fade-in slide-in-from-right-4 space-y-6 duration-300">
+          <div className="animate-in space-y-6 duration-300 fade-in slide-in-from-right-4">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
               {/* Left — settings */}
               <div className="space-y-5 lg:col-span-3">
@@ -449,9 +387,7 @@ export default function CreateServerPage() {
                         <div className="space-y-3">
                           <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">RAM (MB)</label>
                           <Input type="number" value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} className="h-10 font-mono" />
-                          {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                            <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>
-                          )}
+                          {field.state.meta.isTouched && field.state.meta.errors.length > 0 && <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>}
                         </div>
                       )}
                     </form.Field>
@@ -461,9 +397,7 @@ export default function CreateServerPage() {
                         <div className="space-y-3">
                           <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">CPU (%)</label>
                           <Input type="number" value={field.state.value} onChange={(e) => field.handleChange(Number(e.target.value))} className="h-10 font-mono" />
-                          {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
-                            <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>
-                          )}
+                          {field.state.meta.isTouched && field.state.meta.errors.length > 0 && <p className="text-xs text-destructive">{field.state.meta.errors[0]?.toString()}</p>}
                         </div>
                       )}
                     </form.Field>
@@ -497,13 +431,23 @@ export default function CreateServerPage() {
                         {(field) => (
                           <div className="space-y-3">
                             <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">World Type</label>
-                            <Select value={field.state.value} onValueChange={(v: any) => field.handleChange(v)}>
-                              <SelectTrigger className="h-10 w-full cursor-pointer"><SelectValue /></SelectTrigger>
+                            <Select value={field.state.value} onValueChange={(v) => field.handleChange(v as "DEFAULT" | "FLAT" | "LARGE_BIOMES" | "AMPLIFIED")}>
+                              <SelectTrigger className="h-10 w-full cursor-pointer">
+                                <SelectValue />
+                              </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="DEFAULT" className="cursor-pointer">Standard (Default)</SelectItem>
-                                <SelectItem value="FLAT" className="cursor-pointer">Superflat</SelectItem>
-                                <SelectItem value="LARGE_BIOMES" className="cursor-pointer">Large Biomes</SelectItem>
-                                <SelectItem value="AMPLIFIED" className="cursor-pointer">Amplified</SelectItem>
+                                <SelectItem value="DEFAULT" className="cursor-pointer">
+                                  Standard (Default)
+                                </SelectItem>
+                                <SelectItem value="FLAT" className="cursor-pointer">
+                                  Superflat
+                                </SelectItem>
+                                <SelectItem value="LARGE_BIOMES" className="cursor-pointer">
+                                  Large Biomes
+                                </SelectItem>
+                                <SelectItem value="AMPLIFIED" className="cursor-pointer">
+                                  Amplified
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -515,10 +459,16 @@ export default function CreateServerPage() {
                           <div className="space-y-3">
                             <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Structures</label>
                             <Select value={field.state.value ? "true" : "false"} onValueChange={(v) => field.handleChange(v === "true")}>
-                              <SelectTrigger className="h-10 w-full cursor-pointer"><SelectValue /></SelectTrigger>
+                              <SelectTrigger className="h-10 w-full cursor-pointer">
+                                <SelectValue />
+                              </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="true" className="cursor-pointer">Enabled</SelectItem>
-                                <SelectItem value="false" className="cursor-pointer">Disabled</SelectItem>
+                                <SelectItem value="true" className="cursor-pointer">
+                                  Enabled
+                                </SelectItem>
+                                <SelectItem value="false" className="cursor-pointer">
+                                  Disabled
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -545,22 +495,14 @@ export default function CreateServerPage() {
                         <SummaryRow icon={<Database className="h-4 w-4 text-indigo-500" />} label="Memory" value={`${watchedRam} MB (${(watchedRam / 1024).toFixed(1)} GB)`} />
                         <SummaryRow icon={<Cpu className="h-4 w-4 text-emerald-500" />} label="CPU" value={`${(watchedCpu / 100).toFixed(1)} Cores (${watchedCpu}%)`} />
                         <SummaryRow icon={<HardDrive className="h-4 w-4 text-amber-500" />} label="Port" value={`:${watchedPort}`} />
-                        {!isVelocity && watchedJava && (
-                          <SummaryRow icon={<Globe className="h-4 w-4 text-rose-500" />} label="Java" value={javaLabel(watchedJava)} />
-                        )}
+                        {!isVelocity && watchedJava && <SummaryRow icon={<Globe className="h-4 w-4 text-rose-500" />} label="Java" value={javaLabel(watchedJava)} />}
                       </div>
 
                       <div className="mt-4 border-t border-border pt-4">
                         <p className="mb-3 text-xs text-muted-foreground">
-                          Deploying{" "}
-                          <span className="font-bold text-foreground">{watchedName || "Unnamed Server"}</span> — container
-                          will be created and allocated from host resources.
+                          Deploying <span className="font-bold text-foreground">{watchedName || "Unnamed Server"}</span> — container will be created and allocated from host resources.
                         </p>
-                        <Button
-                          type="submit"
-                          className="h-10 w-full cursor-pointer gap-2 font-bold"
-                          disabled={createMutation.isPending}
-                        >
+                        <Button type="submit" className="h-10 w-full cursor-pointer gap-2 font-bold" disabled={createMutation.isPending}>
                           {createMutation.isPending ? (
                             <>
                               <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -598,46 +540,27 @@ export default function CreateServerPage() {
 // ─────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────
-function SoftwareCard({
-  sw,
-  selected,
-  onSelect,
-}: {
-  sw: (typeof SOFTWARE_CATALOGUE)[number];
-  selected: boolean;
-  onSelect: () => void;
-}) {
+function SoftwareCard({ sw, selected, onSelect }: { sw: (typeof SOFTWARE_CATALOGUE)[number]; selected: boolean; onSelect: () => void }) {
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
         "flex w-full items-center gap-3 rounded-xl border p-3.5 text-left transition-all duration-150",
-        selected
-          ? "border-primary/60 bg-primary/8 ring-2 ring-primary/20"
-          : "border-border bg-card/40 hover:border-border/80 hover:bg-muted/30"
+        selected ? "border-primary/60 bg-primary/8 ring-2 ring-primary/20" : "border-border bg-card/40 hover:border-border/80 hover:bg-muted/30"
       )}
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background">
-        {sw.icon ? (
-          <Image src={sw.icon} alt={sw.label} width={28} height={28} className="rounded object-contain" />
-        ) : (
-          <Terminal className="h-5 w-5 text-muted-foreground" />
-        )}
+        {sw.icon ? <Image src={sw.icon} alt={sw.label} width={28} height={28} className="rounded object-contain" /> : <Terminal className="h-5 w-5 text-muted-foreground" />}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-foreground">{sw.label}</span>
-          {sw.tag && (
-            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">{sw.tag}</span>
-          )}
+          {sw.tag && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">{sw.tag}</span>}
         </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{sw.description}</p>
       </div>
-      <div className={cn(
-        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all",
-        selected ? "border-primary bg-primary" : "border-border"
-      )}>
+      <div className={cn("flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all", selected ? "border-primary bg-primary" : "border-border")}>
         {selected && <Check className="h-3 w-3 text-primary-foreground" />}
       </div>
     </button>

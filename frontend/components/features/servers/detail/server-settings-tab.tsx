@@ -15,16 +15,7 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Gamepad2, HelpCircle, Gauge, AlertTriangle, Lock, Cpu, Settings2, Trash2, FileCode, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export function ServerSettingsTab({ id }: { id: string }) {
   const router = useRouter();
@@ -73,7 +64,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [confirmName, setConfirmName] = useState("");
 
-  const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+  const caps = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "");
   const settings = server?.settings || {};
 
   const originalGameMode = caps(settings.gamemode) || "Survival";
@@ -117,6 +108,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
   useEffect(() => {
     if (server && (loadedServerId !== server.id || !hasChanges)) {
       const settings = server.settings || {};
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoadedServerId(server.id);
       setMotd(settings.motd || server.description || "A Minecraft Server");
       setMaxPlayers(settings["max-players"] || String(server.maxPlayers || 20));
@@ -124,7 +116,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
       setJavaVersion(server.javaVersion || "21");
       setMcVersion(server.version || "1.21.11");
 
-      const caps = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+      const caps = (s?: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "");
 
       setGameMode(caps(settings.gamemode) || "Survival");
       setDifficulty(caps(settings.difficulty) || "Easy");
@@ -174,24 +166,28 @@ export function ServerSettingsTab({ id }: { id: string }) {
   };
 
   const handleDeleteServer = () => {
-    deleteMutation.mutate({ id, name: confirmName }, {
-      onSuccess: () => {
-        deleteServer(id);
-        setIsDeleteDialogOpen(false);
-        setConfirmName("");
-        router.push("/servers");
-        toast.success("Server deleted successfully");
-      },
-      onError: (err: any) => {
-        toast.error(err.response?.data?.message || err.message || "Failed to delete server");
-      },
-    });
+    deleteMutation.mutate(
+      { id, name: confirmName },
+      {
+        onSuccess: () => {
+          deleteServer(id);
+          setIsDeleteDialogOpen(false);
+          setConfirmName("");
+          router.push("/servers");
+          toast.success("Server deleted successfully");
+        },
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } }; message?: string };
+          toast.error(axiosError.response?.data?.message || axiosError.message || "Failed to delete server");
+        },
+      }
+    );
   };
 
   return (
     <div className="h-auto animate-in space-y-6 pr-1 duration-300 fade-in lg:h-full lg:overflow-y-auto">
       {/* Header with Save Actions */}
-      <div className="sticky top-0 z-20 flex flex-col items-start justify-between gap-4 border-b border-border bg-background/95 backdrop-blur-md pb-4 pt-1 sm:flex-row sm:items-center">
+      <div className="sticky top-0 z-20 flex flex-col items-start justify-between gap-4 border-b border-border bg-background/95 pt-1 pb-4 backdrop-blur-md sm:flex-row sm:items-center">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-foreground">Server Settings</h2>
           <p className="text-xs text-muted-foreground">Configure your Minecraft server properties</p>
@@ -211,8 +207,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
             size="sm"
             onClick={handleSaveProperties}
             disabled={!hasChanges}
-            className={`h-9 flex-1 gap-1.5 text-xs font-semibold sm:flex-none ${hasChanges ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-              }`}
+            className={`h-9 flex-1 gap-1.5 text-xs font-semibold sm:flex-none ${hasChanges ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
           >
             <CheckCircle2 className="h-4 w-4" /> Save Changes
           </Button>
@@ -247,7 +242,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                   </Tooltip>
                 </span>
                 <Select value={gameMode} onValueChange={setGameMode}>
-                  <SelectTrigger className="cursor-pointer w-full">
+                  <SelectTrigger className="w-full cursor-pointer">
                     <SelectValue placeholder="Select Game Mode" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +274,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                   </Tooltip>
                 </span>
                 <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger className="cursor-pointer w-full">
+                  <SelectTrigger className="w-full cursor-pointer">
                     <SelectValue placeholder="Select Difficulty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -500,7 +495,6 @@ export function ServerSettingsTab({ id }: { id: string }) {
             </div>
 
             <div className="space-y-4 text-xs">
-
               {/* Spawn Protection */}
               <div className="space-y-1.5">
                 <span className="flex items-center gap-1 font-mono font-semibold text-muted-foreground">
@@ -579,11 +573,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                 <div className="space-y-1.5">
                   <span className="flex items-center gap-1 font-semibold text-muted-foreground">
                     Java Executable
-                    {mcVersion && (
-                      <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary normal-case">
-                        Recommended: {javaLabel(recommendedJava(mcVersion))}
-                      </span>
-                    )}
+                    {mcVersion && <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] text-primary normal-case">Recommended: {javaLabel(recommendedJava(mcVersion))}</span>}
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-3.5 w-3.5 cursor-help text-muted-foreground/60" />
@@ -592,7 +582,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                     </Tooltip>
                   </span>
                   <Select value={javaVersion} onValueChange={setJavaVersion} disabled={javaLocked}>
-                    <SelectTrigger className={cn("cursor-pointer w-full", javaLocked && "opacity-60 cursor-not-allowed")}>
+                    <SelectTrigger className={cn("w-full cursor-pointer", javaLocked && "cursor-not-allowed opacity-60")}>
                       <SelectValue placeholder="Java Runtime" />
                     </SelectTrigger>
                     <SelectContent>
@@ -607,13 +597,8 @@ export function ServerSettingsTab({ id }: { id: string }) {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  {javaLocked && (
-                    <p className="text-[11px] text-amber-500 font-sans mt-1">
-                      ⚠ Java 25 is required for Minecraft {mcVersion}+ and cannot be changed.
-                    </p>
-                  )}
+                  {javaLocked && <p className="mt-1 font-sans text-[11px] text-amber-500">⚠ Java 25 is required for Minecraft {mcVersion}+ and cannot be changed.</p>}
                 </div>
-
 
                 {/* Nogui Checkbox */}
                 <div className="flex items-center space-x-2 pt-2">
@@ -647,7 +632,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
           </Card>
 
           {/* Server Version Selection Card */}
-          <Card className="overflow-visible space-y-4 border border-border bg-card/65 p-5">
+          <Card className="space-y-4 overflow-visible border border-border bg-card/65 p-5">
             <div className="flex items-center gap-2.5 border-b border-border/40 pb-2">
               <div className="rounded-lg bg-secondary p-1.5 text-primary">
                 <Settings2 className="h-4.5 w-4.5" />
@@ -705,40 +690,34 @@ export function ServerSettingsTab({ id }: { id: string }) {
         </div>
       </Card>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => {
-        setIsDeleteDialogOpen(open);
-        if (!open) setConfirmName("");
-      }}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={(open) => {
+          setIsDeleteDialogOpen(open);
+          if (!open) setConfirmName("");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+            <AlertDialogTitle className="flex items-center gap-2 text-red-500">
               <AlertTriangle className="h-5 w-5" /> Are you absolutely sure?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-left">
               This action <strong>cannot</strong> be undone. This will permanently delete the server <strong>{server.name}</strong>, all its files, worlds, configs, and metrics.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2 mt-2">
-            <label className="text-xs font-semibold text-muted-foreground block">
-              Please type <span className="font-mono text-foreground font-bold">{server.name}</span> to confirm.
+          <div className="mt-2 space-y-2">
+            <label className="block text-xs font-semibold text-muted-foreground">
+              Please type <span className="font-mono font-bold text-foreground">{server.name}</span> to confirm.
             </label>
-            <Input
-              placeholder="Type server name"
-              value={confirmName}
-              onChange={(e) => setConfirmName(e.target.value)}
-              className="font-mono text-sm"
-              autoFocus
-            />
+            <Input placeholder="Type server name" value={confirmName} onChange={(e) => setConfirmName(e.target.value)} className="font-mono text-sm" autoFocus />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteServer}
               disabled={confirmName !== server.name || deleteMutation.isPending}
-              className={cn(
-                "bg-red-600 text-white hover:bg-red-700 font-semibold cursor-pointer",
-                (confirmName !== server.name || deleteMutation.isPending) && "opacity-50 cursor-not-allowed"
-              )}
+              className={cn("cursor-pointer bg-red-600 font-semibold text-white hover:bg-red-700", (confirmName !== server.name || deleteMutation.isPending) && "cursor-not-allowed opacity-50")}
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete Server"}
             </AlertDialogAction>

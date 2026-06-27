@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,16 +9,7 @@ import { toast } from "sonner";
 import { Database, CheckCircle2, RotateCcw, Trash2, UploadCloud, Download, ShieldAlert } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { backupService, BackupItem } from "@/services/backup-service";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export function ServerBackupsTab({ id }: { id: string }) {
   const { addLog } = useServerStore();
@@ -57,21 +48,28 @@ export function ServerBackupsTab({ id }: { id: string }) {
     file: File | null;
   }>({ isOpen: false, file: null });
 
-  const fetchBackups = async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const data = await backupService.list(id);
-      setBackups(data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load backups list");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  };
+  const fetchBackups = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      try {
+        const data = await backupService.list(id);
+        setBackups(data);
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        toast.error(axiosError.response?.data?.message || "Failed to load backups list");
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [id]
+  );
 
   useEffect(() => {
-    fetchBackups(true);
-  }, [id]);
+    const timer = setTimeout(() => {
+      fetchBackups(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchBackups]);
 
   const checkBackupExists = (fileName: string) => {
     return backups.some((b) => b.name.toLowerCase() === fileName.toLowerCase());
@@ -88,8 +86,9 @@ export function ServerBackupsTab({ id }: { id: string }) {
       toast.success(`Backup "${uploadName}" uploaded successfully.`);
       addLog(id, `[SYSTEM] Uploaded backup file: ${uploadName}`);
       fetchBackups(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || `Upload failed for ${uploadName}`);
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || `Upload failed for ${uploadName}`);
     } finally {
       setUploadingName(null);
       setUploadProgress(0);
@@ -191,8 +190,9 @@ export function ServerBackupsTab({ id }: { id: string }) {
       toast.success("Backup created successfully");
       addLog(id, `[SYSTEM] Manual backup created: ${name || "Auto"}`);
       fetchBackups(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to create backup");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to create backup");
     }
   };
 
@@ -207,8 +207,9 @@ export function ServerBackupsTab({ id }: { id: string }) {
       addLog(id, `[SYSTEM] Deleted backup file: ${bk.name}`);
       toast.success("Backup deleted successfully");
       fetchBackups(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to delete backup");
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to delete backup");
     }
   };
 
@@ -222,13 +223,14 @@ export function ServerBackupsTab({ id }: { id: string }) {
     toast.promise(backupService.restore(id, bk.name), {
       loading: `Restoring data from ${bk.name}... This stops and wipes active files.`,
       success: () => {
-        addLog(id, `[SYSTEM] Backup "${bk.name}" restored successfully. Server file system updated.`);
+        addLog(id, `[SYSTEM] Backup &quot;${bk.name}&quot; restored successfully. Server file system updated.`);
         fetchBackups(false);
         return `Backup restored successfully.`;
       },
-      error: (err) => {
-        addLog(id, `[SYSTEM] Backup restoration failed: ${err.message || "Unknown error"}`);
-        return err.response?.data?.message || "Failed to restore backup";
+      error: (err: unknown) => {
+        const axiosError = err as { message?: string; response?: { data?: { message?: string } } };
+        addLog(id, `[SYSTEM] Backup restoration failed: ${axiosError.message || "Unknown error"}`);
+        return axiosError.response?.data?.message || "Failed to restore backup";
       },
     });
   };
@@ -246,8 +248,9 @@ export function ServerBackupsTab({ id }: { id: string }) {
       a.remove();
       window.URL.revokeObjectURL(url);
       toast.success("Download started");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Download failed");
+      console.error(err);
     }
   };
 
@@ -267,13 +270,14 @@ export function ServerBackupsTab({ id }: { id: string }) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative flex min-h-[450px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 lg:h-full select-none ${isDragging ? "border-primary bg-primary/5 ring-2 ring-primary/20 scale-[0.99]" : "border-border/80"
-        }`}
+      className={`relative flex min-h-[450px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 select-none lg:h-full ${
+        isDragging ? "scale-[0.99] border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border/80"
+      }`}
     >
       {/* Drag Overlay */}
       {isDragging && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-xs border border-dashed border-primary">
-          <UploadCloud className="h-12 w-12 text-primary animate-bounce" />
+        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary bg-background/80 backdrop-blur-xs">
+          <UploadCloud className="h-12 w-12 animate-bounce text-primary" />
           <span className="font-mono text-sm font-bold text-foreground">Drop backup .zip here to upload</span>
         </div>
       )}
@@ -288,15 +292,9 @@ export function ServerBackupsTab({ id }: { id: string }) {
               setSearchBackup(e.target.value);
               setBackupPage(1);
             }}
-            className="h-8 max-w-[180px] text-xs font-mono"
+            className="h-8 max-w-[180px] font-mono text-xs"
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUploadClick}
-            disabled={!!uploadingName}
-            className="h-8 shrink-0 cursor-pointer text-xs font-semibold gap-1"
-          >
+          <Button variant="outline" size="sm" onClick={handleUploadClick} disabled={!!uploadingName} className="h-8 shrink-0 cursor-pointer gap-1 text-xs font-semibold">
             {uploadingName ? (
               <>
                 <Spinner className="h-3 w-3" />
@@ -310,7 +308,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
             )}
           </Button>
           <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".zip" className="hidden" disabled={!!uploadingName} />
-          <Button onClick={() => setCreateDialog({ isOpen: true, name: "" })} disabled={!!uploadingName} size="sm" className="h-8 shrink-0 cursor-pointer text-xs font-semibold gap-1">
+          <Button onClick={() => setCreateDialog({ isOpen: true, name: "" })} disabled={!!uploadingName} size="sm" className="h-8 shrink-0 cursor-pointer gap-1 text-xs font-semibold">
             <Database className="h-3.5 w-3.5" />
             Create Backup
           </Button>
@@ -321,10 +319,10 @@ export function ServerBackupsTab({ id }: { id: string }) {
       {uploadingName && (
         <div className="mb-4 space-y-1.5 rounded-lg border border-border bg-muted/20 p-3.5 font-mono text-xs">
           <div className="flex items-center justify-between gap-4">
-            <span className="truncate text-foreground/80 font-bold">Uploading {uploadingName}</span>
-            <span className="font-bold text-primary shrink-0">{uploadProgress}%</span>
+            <span className="truncate font-bold text-foreground/80">Uploading {uploadingName}</span>
+            <span className="shrink-0 font-bold text-primary">{uploadProgress}%</span>
           </div>
-          <div className="h-1.5 w-full bg-secondary/50 rounded-full overflow-hidden">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary/50">
             <div className="h-full bg-primary transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
           </div>
         </div>
@@ -332,7 +330,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
 
       {/* Restore Warning banner */}
       {!loading && backups.length > 0 && (
-        <div className="mb-3.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-[11px] font-mono text-amber-500">
+        <div className="mb-3.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 font-mono text-[11px] text-amber-500">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Note: Restoring a backup clears existing files and restarts the server container. Make sure server is empty before proceeding.</span>
         </div>
@@ -350,25 +348,42 @@ export function ServerBackupsTab({ id }: { id: string }) {
           </div>
         ) : (
           paginated.map((bk) => (
-            <div key={bk.id} className="flex animate-in items-center justify-between rounded-xl border border-border bg-secondary/20 p-3.5 font-mono text-xs duration-150 fade-in hover:bg-secondary/35">
+            <div
+              key={bk.id}
+              className="flex animate-in items-center justify-between rounded-xl border border-border bg-secondary/20 p-3.5 font-mono text-xs duration-150 fade-in hover:bg-secondary/35"
+            >
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                 <div className="min-w-0">
-                  <span className="font-bold text-foreground/90 block truncate" title={bk.name}>{bk.name}</span>
+                  <span className="block truncate font-bold text-foreground/90" title={bk.name}>
+                    {bk.name}
+                  </span>
                   <div className="mt-0.5 flex gap-3 text-[10px] text-muted-foreground">
                     <span>Size: {bk.size}</span>
                     <span>Date: {bk.date}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5 ml-4">
+              <div className="ml-4 flex shrink-0 items-center gap-1.5">
                 <Button variant="ghost" size="icon" onClick={() => handleDownloadBackup(bk)} className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-primary" title="Download Backup">
                   <Download className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setRestoreDialog({ isOpen: true, backup: bk })} className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-emerald-500" title="Restore Backup">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setRestoreDialog({ isOpen: true, backup: bk })}
+                  className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-emerald-500"
+                  title="Restore Backup"
+                >
                   <RotateCcw className="h-3.5 w-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteDialog({ isOpen: true, backup: bk })} className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-rose-500" title="Delete Backup">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDeleteDialog({ isOpen: true, backup: bk })}
+                  className="h-7 w-7 cursor-pointer text-muted-foreground hover:text-rose-500"
+                  title="Delete Backup"
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -411,9 +426,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Create Server Backup</AlertDialogTitle>
-            <AlertDialogDescription>
-              Enter a name for the new backup archive (leave blank for automatic name):
-            </AlertDialogDescription>
+            <AlertDialogDescription>Enter a name for the new backup archive (leave blank for automatic name):</AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-2">
             <Input
@@ -426,9 +439,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCreateConfirm}>
-              Create
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleCreateConfirm}>Create</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -439,7 +450,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Restore Server Backup</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to restore <span className="font-bold text-foreground font-mono">"{restoreDialog.backup?.name}"</span>?
+              Are you sure you want to restore <span className="font-mono font-bold text-foreground">&quot;{restoreDialog.backup?.name}&quot;</span>?
               <br />
               <span className="font-semibold text-rose-500">
                 Warning: This will shut down the server container, wipe the current file system (excluding backups), and restore the saved files. This action cannot be undone.
@@ -448,7 +459,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleRestoreConfirm} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <AlertDialogAction onClick={handleRestoreConfirm} className="bg-emerald-600 text-white hover:bg-emerald-700">
               Restore
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -461,7 +472,7 @@ export function ServerBackupsTab({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Backup Archive</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete <span className="font-bold text-foreground font-mono">"{deleteDialog.backup?.name}"</span>? This action cannot be undone.
+              Are you sure you want to permanently delete <span className="font-mono font-bold text-foreground">&quot;{deleteDialog.backup?.name}&quot;</span>? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -479,17 +490,17 @@ export function ServerBackupsTab({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Backup Already Exists</AlertDialogTitle>
             <AlertDialogDescription>
-              The backup archive <span className="font-bold text-foreground font-mono">"{duplicateUpload.file?.name}"</span> already exists. What would you like to do?
+              The backup archive <span className="font-mono font-bold text-foreground">&quot;{duplicateUpload.file?.name}&quot;</span> already exists. What would you like to do?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 justify-end sm:-mx-4 sm:-mb-4 sm:p-4 sm:bg-muted/50 sm:border-t rounded-b-xl">
-            <Button variant="ghost" onClick={handleResolveCancel} className="text-xs font-semibold cursor-pointer">
+          <AlertDialogFooter className="flex flex-col justify-end gap-2 rounded-b-xl sm:-mx-4 sm:-mb-4 sm:flex-row sm:border-t sm:bg-muted/50 sm:p-4">
+            <Button variant="ghost" onClick={handleResolveCancel} className="cursor-pointer text-xs font-semibold">
               Skip File
             </Button>
-            <Button variant="outline" onClick={handleResolveRename} className="text-xs font-semibold cursor-pointer">
+            <Button variant="outline" onClick={handleResolveRename} className="cursor-pointer text-xs font-semibold">
               Auto Rename
             </Button>
-            <Button onClick={handleResolveOverwrite} variant="destructive" className="text-xs font-semibold cursor-pointer text-white">
+            <Button onClick={handleResolveOverwrite} variant="destructive" className="cursor-pointer text-xs font-semibold text-white">
               Overwrite
             </Button>
           </AlertDialogFooter>

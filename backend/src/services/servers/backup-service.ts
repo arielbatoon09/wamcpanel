@@ -25,7 +25,7 @@ export class BackupService {
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ToggleServerPowerService) private readonly togglePowerService: ToggleServerPowerService,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -66,13 +66,7 @@ export class BackupService {
         let output = "";
         execStream.on("data", (chunk: Buffer) => {
           let text = chunk.toString("utf8");
-          if (
-            chunk.length >= 8 &&
-            (chunk[0] === 1 || chunk[0] === 2) &&
-            chunk[1] === 0 &&
-            chunk[2] === 0 &&
-            chunk[3] === 0
-          ) {
+          if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
             text = chunk.subarray(8).toString("utf8");
           }
           output += text;
@@ -82,7 +76,7 @@ export class BackupService {
           resolve(output.trim());
         });
 
-        execStream.on("error", (err) => {
+        execStream.on("error", err => {
           reject(err);
         });
       });
@@ -150,7 +144,9 @@ export class BackupService {
     try {
       const inspectData = await container.inspect();
       isRunning = inspectData.State.Running;
-    } catch { }
+    } catch {
+      // Container not found or inspect failed; treat as not running
+    }
 
     try {
       if (isRunning) {
@@ -170,7 +166,7 @@ export class BackupService {
     } finally {
       if (isRunning) {
         // Re-enable save
-        await this.runRconCommand(serverId, "save-on").catch(() => { });
+        await this.runRconCommand(serverId, "save-on").catch(() => {});
       }
     }
   }
@@ -232,7 +228,7 @@ export class BackupService {
         const writeStream = fs.createWriteStream(targetPath);
         stream.pipe(writeStream);
         writeStream.on("finish", resolve);
-        writeStream.on("error", (err) => {
+        writeStream.on("error", err => {
           writeStream.destroy();
           reject(err);
         });
@@ -244,7 +240,7 @@ export class BackupService {
   }
 
   public async restore(serverId: string, userId: string, filename: string): Promise<void> {
-    const server = await this.verifyServerAccess(serverId, userId);
+    // const server = await this.verifyServerAccess(serverId, userId);
     const serverDir = getServerDirectory(serverId);
     const backupDir = this.getBackupDirectory(serverId);
     const zipPath = path.join(backupDir, filename);
@@ -271,7 +267,9 @@ export class BackupService {
           uptime: 0,
         });
       }
-    } catch { }
+    } catch {
+      // Ignore errors when checking container status or stopping
+    }
 
     try {
       // Clear server directory

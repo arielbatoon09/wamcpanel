@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { useServerStore } from "@/hooks/useServerStore";
 import { useServer } from "@/services/server-service";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
   const params = useParams();
   const id = params.id as string;
 
-  const { servers, setServers, startServer, stopServer, restartServer, killServer, deletingIds } = useServerStore();
+  const { servers, startServer, stopServer, restartServer, killServer, deletingIds, syncServer } = useServerStore();
 
   const isDeleting = deletingIds.includes(id);
 
@@ -37,14 +36,9 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
   // Sync details from API to Zustand store on load/refresh
   useEffect(() => {
     if (apiServer) {
-      const exists = servers.some((s) => s.id === apiServer.id);
-      if (exists) {
-        setServers(servers.map((s) => (s.id === apiServer.id ? apiServer : s)));
-      } else {
-        setServers([...servers, apiServer]);
-      }
+      syncServer(apiServer);
     }
-  }, [apiServer, setServers]);
+  }, [apiServer, syncServer]);
 
   const server = servers.find((s) => s.id === id);
 

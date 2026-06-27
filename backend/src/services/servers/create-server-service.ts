@@ -6,7 +6,7 @@ import { BadRequestException } from "@/exceptions";
 
 @injectable()
 export class CreateServerService {
-  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) { }
+  constructor(@inject(ServerRepository) private readonly serverRepository: ServerRepository) {}
 
   public async execute(
     userId: string,
@@ -53,5 +53,3 @@ export class CreateServerService {
     };
   }
 }
-
-

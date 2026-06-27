@@ -38,12 +38,7 @@ export const backupService = {
     return response.data;
   },
 
-  upload: async (
-    serverId: string,
-    file: File,
-    customName?: string,
-    onProgress?: (pct: number) => void
-  ): Promise<void> => {
+  upload: async (serverId: string, file: File, customName?: string, onProgress?: (pct: number) => void): Promise<void> => {
     const fileName = customName || file.name;
     await apiClient.post(`/api/servers/v1/${serverId}/backups/upload`, file, {
       params: { name: fileName },

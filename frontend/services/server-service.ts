@@ -29,19 +29,19 @@ export const serverService = {
     return response.data.data.server;
   },
 
-  create: async (data: any): Promise<ServerAPIResponse> => {
+  create: async (data: unknown): Promise<ServerAPIResponse> => {
     const response = await apiClient.post<ServerDetailResponse>("/api/servers/v1", data);
     return response.data.data.server;
   },
 
-  update: async (params: { id: string; data: any }): Promise<ServerAPIResponse> => {
+  update: async (params: { id: string; data: unknown }): Promise<ServerAPIResponse> => {
     const response = await apiClient.put<ServerDetailResponse>(`/api/servers/v1/${params.id}`, params.data);
     return response.data.data.server;
   },
 
-  delete: async (id: string, name?: string): Promise<any> => {
+  delete: async (id: string, name?: string): Promise<unknown> => {
     const response = await apiClient.delete(`/api/servers/v1/${id}`, {
-      params: { name }
+      params: { name },
     });
     return response.data;
   },
@@ -61,11 +61,24 @@ export const serverService = {
     return response.data.data.builds;
   },
 
-  getHostSpecs: async (): Promise<any> => {
-    const response = await apiClient.get<{ data: { specs: any } }>("/api/servers/v1/meta/host-specs");
+  getHostSpecs: async (): Promise<HostSpecsResponse> => {
+    const response = await apiClient.get<{ data: { specs: HostSpecsResponse } }>("/api/servers/v1/meta/host-specs");
     return response.data.data.specs;
   },
 };
+
+export interface HostSpecsResponse {
+  cpuModel: string;
+  cpuCores: number;
+  totalRam: number;
+  freeRam: number;
+  platform: string;
+  release: string;
+  osType: string;
+  uptime: number;
+  totalDisk: number;
+  freeDisk: number;
+}
 
 // TanStack Query Hooks
 export function useServers(options?: { refetchInterval?: number | false; enabled?: boolean }) {
@@ -89,7 +102,7 @@ export function useServer(id: string, options?: { refetchInterval?: number | fal
 export function useCreateServer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => serverService.create(data),
+    mutationFn: (data: unknown) => serverService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["servers"] });
     },
@@ -99,7 +112,7 @@ export function useCreateServer() {
 export function useUpdateServer() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (params: { id: string; data: any }) => serverService.update(params),
+    mutationFn: (params: { id: string; data: unknown }) => serverService.update(params),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["servers"] });
       queryClient.invalidateQueries({ queryKey: ["server", data.id] });

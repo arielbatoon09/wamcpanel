@@ -56,4 +56,3 @@ export const envConfig = {
 };
 
 export type EnvConfig = typeof envConfig;
-

@@ -29,6 +29,7 @@ export function ProfileSettingsForm() {
   // Pre-fill name when data loads
   useEffect(() => {
     if (meData?.user?.name) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(meData.user.name);
     }
   }, [meData]);
@@ -45,8 +46,10 @@ export function ProfileSettingsForm() {
       { name: name.trim() },
       {
         onSuccess: () => toast.success("Display name updated!"),
-        onError: (err: any) =>
-          toast.error(err?.response?.data?.message || "Failed to update name"),
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } } };
+          toast.error(axiosError?.response?.data?.message || "Failed to update name");
+        },
       }
     );
   };
@@ -72,8 +75,10 @@ export function ProfileSettingsForm() {
           setNewPassword("");
           setConfirmPassword("");
         },
-        onError: (err: any) =>
-          toast.error(err?.response?.data?.message || "Failed to change password"),
+        onError: (err: unknown) => {
+          const axiosError = err as { response?: { data?: { message?: string } } };
+          toast.error(axiosError?.response?.data?.message || "Failed to change password");
+        },
       }
     );
   };
@@ -85,26 +90,22 @@ export function ProfileSettingsForm() {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       {/* ── Personal Info Card ───────────────────────────────────── */}
       <Card className="flex flex-col border border-border bg-card/65 p-6 backdrop-blur-md">
-        <div className="flex items-center gap-2 border-b border-border pb-4 mb-4">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-4">
           <User className="h-5 w-5 text-primary" />
           <div>
             <h3 className="font-mono text-sm font-bold tracking-wider uppercase">Personal Information</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Manage your public display name and account email.</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">Manage your public display name and account email.</p>
           </div>
         </div>
 
-        <form onSubmit={handleSaveName} className="flex-1 flex flex-col justify-between space-y-4">
+        <form onSubmit={handleSaveName} className="flex flex-1 flex-col justify-between space-y-4">
           <div className="space-y-4 font-mono text-xs">
             {/* Email — read-only */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+              <label className="flex items-center gap-1.5 font-semibold text-muted-foreground uppercase">
                 <Mail className="h-3.5 w-3.5" /> Email Address
               </label>
-              <Input
-                value={email}
-                disabled
-                className="h-9 cursor-not-allowed font-mono text-xs opacity-60 bg-muted/45"
-              />
+              <Input value={email} disabled className="h-9 cursor-not-allowed bg-muted/45 font-mono text-xs opacity-60" />
               <p className="text-[10px] text-muted-foreground/60">Email cannot be changed as it is tied to your account identity.</p>
             </div>
 
@@ -121,16 +122,12 @@ export function ProfileSettingsForm() {
                 placeholder="Your name"
                 className={cn("h-9 text-sm", nameError && "border-destructive focus-visible:ring-destructive/50")}
               />
-              {nameError && <p className="text-[11px] text-destructive mt-1">{nameError}</p>}
+              {nameError && <p className="mt-1 text-[11px] text-destructive">{nameError}</p>}
             </div>
           </div>
 
-          <div className="pt-4 mt-auto">
-            <Button
-              type="submit"
-              disabled={isSaving || name.trim() === (meData?.user?.name ?? "")}
-              className="w-full cursor-pointer gap-2 font-semibold"
-            >
+          <div className="mt-auto pt-4">
+            <Button type="submit" disabled={isSaving || name.trim() === (meData?.user?.name ?? "")} className="w-full cursor-pointer gap-2 font-semibold">
               {isSaving ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving Changes…
@@ -147,11 +144,11 @@ export function ProfileSettingsForm() {
 
       {/* ── Change Password Card ─────────────────────────────────── */}
       <Card className="border border-border bg-card/65 p-6 backdrop-blur-md">
-        <div className="flex items-center gap-2 border-b border-border pb-4 mb-4">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-4">
           <Lock className="h-5 w-5 text-primary" />
           <div>
             <h3 className="font-mono text-sm font-bold tracking-wider uppercase">Security & Password</h3>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Update your password regularly to keep your account secure.</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">Update your password regularly to keep your account secure.</p>
           </div>
         </div>
 
@@ -171,15 +168,11 @@ export function ProfileSettingsForm() {
                 placeholder="••••••••"
                 className={cn("h-9 pr-9 text-sm", passwordErrors.current && "border-destructive focus-visible:ring-destructive/50")}
               />
-              <button
-                type="button"
-                onClick={() => setShowCurrent((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
+              <button type="button" onClick={() => setShowCurrent((v) => !v)} className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground">
                 {showCurrent ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
             </div>
-            {passwordErrors.current && <p className="text-[11px] text-destructive mt-1">{passwordErrors.current}</p>}
+            {passwordErrors.current && <p className="mt-1 text-[11px] text-destructive">{passwordErrors.current}</p>}
           </div>
 
           {/* New password */}
@@ -197,15 +190,11 @@ export function ProfileSettingsForm() {
                 placeholder="Min 8 characters"
                 className={cn("h-9 pr-9 text-sm", passwordErrors.new && "border-destructive focus-visible:ring-destructive/50")}
               />
-              <button
-                type="button"
-                onClick={() => setShowNew((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
+              <button type="button" onClick={() => setShowNew((v) => !v)} className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground">
                 {showNew ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
             </div>
-            {passwordErrors.new && <p className="text-[11px] text-destructive mt-1">{passwordErrors.new}</p>}
+            {passwordErrors.new && <p className="mt-1 text-[11px] text-destructive">{passwordErrors.new}</p>}
           </div>
 
           {/* Confirm new password */}
@@ -223,24 +212,15 @@ export function ProfileSettingsForm() {
                 placeholder="••••••••"
                 className={cn("h-9 pr-9 text-sm", passwordErrors.confirm && "border-destructive focus-visible:ring-destructive/50")}
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-              >
+              <button type="button" onClick={() => setShowConfirm((v) => !v)} className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground">
                 {showConfirm ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
             </div>
-            {passwordErrors.confirm && <p className="text-[11px] text-destructive mt-1">{passwordErrors.confirm}</p>}
+            {passwordErrors.confirm && <p className="mt-1 text-[11px] text-destructive">{passwordErrors.confirm}</p>}
           </div>
 
           <div className="pt-4">
-            <Button
-              type="submit"
-              disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
-              variant="outline"
-              className="w-full cursor-pointer gap-2 font-semibold"
-            >
+            <Button type="submit" disabled={isSaving || !currentPassword || !newPassword || !confirmPassword} variant="outline" className="w-full cursor-pointer gap-2 font-semibold">
               {isSaving ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" /> Updating Password…

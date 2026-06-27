@@ -21,7 +21,7 @@ export class PluginService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -158,13 +158,10 @@ export class PluginService {
     const pluginsDir = path.join(serverDir, "plugins");
     const archivedDir = path.join(pluginsDir, "archived");
 
-    let targetPath = "";
-    if (enable) {
-      targetPath = path.join(pluginsDir, fileName);
-    } else {
+    if (!enable) {
       await fs.promises.mkdir(archivedDir, { recursive: true });
-      targetPath = path.join(archivedDir, fileName);
     }
+    const targetPath = enable ? path.join(pluginsDir, fileName) : path.join(archivedDir, fileName);
 
     if (currentPath === targetPath) {
       return; // Already in target location
@@ -211,7 +208,7 @@ export class PluginService {
         const writeStream = fs.createWriteStream(targetPath);
         stream.pipe(writeStream);
         writeStream.on("finish", resolve);
-        writeStream.on("error", (err) => {
+        writeStream.on("error", err => {
           writeStream.destroy();
           reject(err);
         });

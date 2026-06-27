@@ -16,6 +16,7 @@ export interface PlayerInfo {
 }
 
 const stripAnsi = (text: string): string => {
+  // eslint-disable-next-line no-control-regex
   return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "");
 };
 
@@ -24,7 +25,7 @@ export class PlayerService {
   constructor(
     @inject(ServerRepository) private readonly serverRepository: ServerRepository,
     @inject(ActivityLogService) private readonly activityLogService: ActivityLogService
-  ) { }
+  ) {}
 
   private async verifyServerAccess(serverId: string, userId: string) {
     const existing = await this.serverRepository.findByIdAndUserId(serverId, userId);
@@ -57,13 +58,7 @@ export class PlayerService {
         let output = "";
         execStream.on("data", (chunk: Buffer) => {
           let text = chunk.toString("utf8");
-          if (
-            chunk.length >= 8 &&
-            (chunk[0] === 1 || chunk[0] === 2) &&
-            chunk[1] === 0 &&
-            chunk[2] === 0 &&
-            chunk[3] === 0
-          ) {
+          if (chunk.length >= 8 && (chunk[0] === 1 || chunk[0] === 2) && chunk[1] === 0 && chunk[2] === 0 && chunk[3] === 0) {
             text = chunk.subarray(8).toString("utf8");
           }
           output += text;
@@ -73,7 +68,7 @@ export class PlayerService {
           resolve(output.trim());
         });
 
-        execStream.on("error", (err) => {
+        execStream.on("error", err => {
           reject(err);
         });
       });
@@ -111,7 +106,10 @@ export class PlayerService {
       return [];
     }
 
-    const onlineNames = playersPart.split(",").map(name => name.trim()).filter(Boolean);
+    const onlineNames = playersPart
+      .split(",")
+      .map(name => name.trim())
+      .filter(Boolean);
     if (onlineNames.length === 0) {
       return [];
     }
@@ -137,7 +135,7 @@ export class PlayerService {
       // Ignored
     }
 
-    return onlineNames.map((name) => {
+    return onlineNames.map(name => {
       // Find UUID
       const cacheEntry = usercache.find((entry: any) => entry.name.toLowerCase() === name.toLowerCase());
       const uuid = cacheEntry ? cacheEntry.uuid : "N/A";

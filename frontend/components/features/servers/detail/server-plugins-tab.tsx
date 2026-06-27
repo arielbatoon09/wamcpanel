@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,16 +11,7 @@ import { toast } from "sonner";
 import { Trash2, UploadCloud, ShieldAlert } from "lucide-react";
 import { pluginService, PluginItem } from "@/services/plugin-service";
 import { Switch } from "@/components/ui/switch";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export function ServerPluginsTab({ id }: { id: string }) {
   const { addLog } = useServerStore();
@@ -53,26 +44,29 @@ export function ServerPluginsTab({ id }: { id: string }) {
   };
 
   const checkPluginExists = (fileName: string) => {
-    return plugins.some(
-      (p) => getPluginFilename(p.pluginPath).toLowerCase() === fileName.toLowerCase()
-    );
+    return plugins.some((p) => getPluginFilename(p.pluginPath).toLowerCase() === fileName.toLowerCase());
   };
 
-  const fetchPlugins = async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const data = await pluginService.list(id);
-      setPlugins(data);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to load plugins");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  };
+  const fetchPlugins = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      try {
+        const data = await pluginService.list(id);
+        setPlugins(data);
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { data?: { message?: string } } };
+        toast.error(axiosError.response?.data?.message || "Failed to load plugins");
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [id]
+  );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPlugins(true);
-  }, [id]);
+  }, [id, fetchPlugins]);
 
   const handleTogglePlugin = async (plugin: PluginItem) => {
     const nextStatus = !plugin.enabled;
@@ -82,8 +76,9 @@ export function ServerPluginsTab({ id }: { id: string }) {
       addLog(id, `[SYSTEM] Plugin "${plugin.name}" has been ${nextStatus ? "enabled" : "disabled"}. Restart the server to apply changes.`);
       toast.success(`Plugin ${plugin.name} ${nextStatus ? "enabled" : "disabled"}. Restart required.`);
       fetchPlugins(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || `Failed to toggle plugin`);
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || `Failed to toggle plugin`);
     }
   };
 
@@ -98,8 +93,9 @@ export function ServerPluginsTab({ id }: { id: string }) {
       addLog(id, `[SYSTEM] Plugin "${plugin.name}" has been uninstalled. Restart required.`);
       toast.success(`Plugin "${plugin.name}" deleted. Restart required.`);
       fetchPlugins(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || `Failed to delete plugin`);
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || `Failed to delete plugin`);
     }
   };
 
@@ -114,8 +110,9 @@ export function ServerPluginsTab({ id }: { id: string }) {
       toast.success(`Plugin "${uploadName}" uploaded successfully. Restart required.`);
       addLog(id, `[SYSTEM] Uploaded plugin: ${uploadName}. Restart the server to activate.`);
       fetchPlugins(false);
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || `Upload failed for ${uploadName}`);
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || `Upload failed for ${uploadName}`);
     } finally {
       setUploadingName(null);
       setUploadProgress(0);
@@ -223,13 +220,14 @@ export function ServerPluginsTab({ id }: { id: string }) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative flex min-h-[450px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 lg:h-full select-none ${isDragging ? "border-primary bg-primary/5 ring-2 ring-primary/20 scale-[0.99]" : "border-border/80"
-        }`}
+      className={`relative flex min-h-[450px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 select-none lg:h-full ${
+        isDragging ? "scale-[0.99] border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border/80"
+      }`}
     >
       {/* Drag Overlay */}
       {isDragging && (
-        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-xs border border-dashed border-primary">
-          <UploadCloud className="h-12 w-12 text-primary animate-bounce" />
+        <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-primary bg-background/80 backdrop-blur-xs">
+          <UploadCloud className="h-12 w-12 animate-bounce text-primary" />
           <span className="font-mono text-sm font-bold text-foreground">Drop plugin .jar here to upload</span>
         </div>
       )}
@@ -237,13 +235,7 @@ export function ServerPluginsTab({ id }: { id: string }) {
       <div className="mb-4 flex shrink-0 items-center justify-between border-b border-border pb-3">
         <h3 className="font-mono text-sm font-bold tracking-wider uppercase">Plugins</h3>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleUploadClick}
-            disabled={!!uploadingName}
-            className="h-8 text-xs font-semibold cursor-pointer gap-1"
-          >
+          <Button variant="outline" size="sm" onClick={handleUploadClick} disabled={!!uploadingName} className="h-8 cursor-pointer gap-1 text-xs font-semibold">
             {uploadingName ? (
               <>
                 <Spinner className="h-3 w-3" />
@@ -264,7 +256,7 @@ export function ServerPluginsTab({ id }: { id: string }) {
               setSearchPlugin(e.target.value);
               setPluginPage(1);
             }}
-            className="h-8 max-w-[200px] text-xs font-mono"
+            className="h-8 max-w-[200px] font-mono text-xs"
           />
         </div>
       </div>
@@ -273,8 +265,8 @@ export function ServerPluginsTab({ id }: { id: string }) {
       {uploadingName && (
         <div className="mb-4 space-y-1.5 rounded-lg border border-border bg-muted/20 p-3.5 font-mono text-xs">
           <div className="flex items-center justify-between gap-4">
-            <span className="truncate text-foreground/80 font-bold">Uploading {uploadingName}</span>
-            <span className="font-bold text-primary shrink-0">{uploadProgress}%</span>
+            <span className="truncate font-bold text-foreground/80">Uploading {uploadingName}</span>
+            <span className="shrink-0 font-bold text-primary">{uploadProgress}%</span>
           </div>
           <Progress value={uploadProgress} className="h-1.5 bg-secondary/50" />
         </div>
@@ -282,7 +274,7 @@ export function ServerPluginsTab({ id }: { id: string }) {
 
       {/* Restart Warning banner */}
       {plugins.length > 0 && (
-        <div className="mb-3.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 text-[11px] font-mono text-amber-500">
+        <div className="mb-3.5 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 font-mono text-[11px] text-amber-500">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Note: Changing plugins status (enabling, disabling, uploading, or deleting) requires a server restart to take effect.</span>
         </div>
@@ -306,7 +298,7 @@ export function ServerPluginsTab({ id }: { id: string }) {
                   <h4 className="text-sm font-bold text-foreground">{plugin.name}</h4>
                   <span className="rounded bg-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">v{plugin.version}</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{plugin.desc}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{plugin.desc}</p>
               </div>
 
               <div className="flex shrink-0 items-center gap-4">
@@ -314,12 +306,7 @@ export function ServerPluginsTab({ id }: { id: string }) {
                   <span className={`font-mono text-[10px] font-bold uppercase transition-colors ${plugin.enabled ? "text-emerald-500" : "text-muted-foreground"}`}>
                     {plugin.enabled ? "Enabled" : "Disabled"}
                   </span>
-                  <Switch
-                    checked={plugin.enabled}
-                    onCheckedChange={() => handleTogglePlugin(plugin)}
-                    size="sm"
-                    className="cursor-pointer"
-                  />
+                  <Switch checked={plugin.enabled} onCheckedChange={() => handleTogglePlugin(plugin)} size="sm" className="cursor-pointer" />
                 </div>
                 <Button
                   variant="ghost"
@@ -371,7 +358,8 @@ export function ServerPluginsTab({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Uninstall Plugin</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to permanently delete <span className="font-bold text-foreground font-mono">"{deleteDialog.plugin?.name}"</span>? This will remove the jar file from your server.
+              Are you sure you want to permanently delete <span className="font-mono font-bold text-foreground">&quot;{deleteDialog.plugin?.name}&quot;</span>? This will remove the jar file from your
+              server.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -389,17 +377,17 @@ export function ServerPluginsTab({ id }: { id: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Plugin Already Exists</AlertDialogTitle>
             <AlertDialogDescription>
-              The plugin <span className="font-bold text-foreground font-mono">"{duplicateUpload.file?.name}"</span> already exists. What would you like to do?
+              The plugin <span className="font-mono font-bold text-foreground">&quot;{duplicateUpload.file?.name}&quot;</span> already exists. What would you like to do?
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex flex-col sm:flex-row gap-2 justify-end sm:-mx-4 sm:-mb-4 sm:p-4 sm:bg-muted/50 sm:border-t rounded-b-xl">
-            <Button variant="ghost" onClick={handleResolveCancel} className="text-xs font-semibold cursor-pointer">
+          <AlertDialogFooter className="flex flex-col justify-end gap-2 rounded-b-xl sm:-mx-4 sm:-mb-4 sm:flex-row sm:border-t sm:bg-muted/50 sm:p-4">
+            <Button variant="ghost" onClick={handleResolveCancel} className="cursor-pointer text-xs font-semibold">
               Skip File
             </Button>
-            <Button variant="outline" onClick={handleResolveRename} className="text-xs font-semibold cursor-pointer">
+            <Button variant="outline" onClick={handleResolveRename} className="cursor-pointer text-xs font-semibold">
               Auto Rename
             </Button>
-            <Button onClick={handleResolveOverwrite} variant="destructive" className="text-xs font-semibold cursor-pointer text-white">
+            <Button onClick={handleResolveOverwrite} variant="destructive" className="cursor-pointer text-xs font-semibold text-white">
               Overwrite
             </Button>
           </AlertDialogFooter>

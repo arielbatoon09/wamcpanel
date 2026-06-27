@@ -32,7 +32,7 @@ export function ServerCard({ server }: ServerCardProps) {
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} whileHover={{ y: -4 }} transition={{ duration: 0.3 }}>
       <Card
         onClick={() => router.push(`/server/${server.id}`)}
-        className="!pb-0 group relative flex h-[320px] cursor-pointer flex-col justify-between overflow-hidden border border-border/80 bg-card/65 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
+        className="group relative flex h-[320px] cursor-pointer flex-col justify-between overflow-hidden border border-border/80 bg-card/65 !pb-0 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
       >
         {/* Glow Header */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -40,17 +40,19 @@ export function ServerCard({ server }: ServerCardProps) {
         {/* Top Info */}
         <div className="p-5">
           <div className="mb-2 flex items-start justify-between gap-2">
-            <div className="relative group/ip">
+            <div className="group/ip relative">
               <h3 className="text-lg leading-tight font-bold tracking-tight transition-colors duration-200 group-hover:text-primary">{server.name}</h3>
               <div className="mt-0.5 flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-                <span>{server.host}:{server.port}</span>
+                <span>
+                  {server.host}:{server.port}
+                </span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(`${server.host}:${server.port}`);
                     toast.success("Server address copied!");
                   }}
-                  className="rounded bg-primary/10 p-0.5 hover:bg-primary/20 text-primary cursor-pointer transition-all opacity-0 group-hover/ip:opacity-100"
+                  className="cursor-pointer rounded bg-primary/10 p-0.5 text-primary opacity-0 transition-all group-hover/ip:opacity-100 hover:bg-primary/20"
                   title="Copy IP:Port"
                 >
                   <Copy className="h-3 w-3" />

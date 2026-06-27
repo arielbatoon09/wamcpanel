@@ -1,6 +1,4 @@
 import { Logo } from "@/components/common/logo";
-import Image from "next/image";
-import Link from "next/link";
 
 export const metadata = {
   title: "WAMCPanel — Auth",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -62,28 +62,32 @@ export function ServerActivityLogTab({ id }: { id: string }) {
   const [categoryFilter, setCategoryFilter] = useState<"all" | ActivityCategory>("all");
   const [logPage, setLogPage] = useState(1);
 
-  const fetchLogs = async (showLoading = false) => {
-    if (showLoading) setLoading(true);
-    try {
-      const data = await activityLogService.list(id);
-      setAllLogs(data);
-    } catch (err: any) {
-      toast.error("Failed to load activity logs");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  };
+  const fetchLogs = useCallback(
+    async (showLoading = false) => {
+      if (showLoading) setLoading(true);
+      try {
+        const data = await activityLogService.list(id);
+        setAllLogs(data);
+      } catch (err: unknown) {
+        toast.error("Failed to load activity logs");
+        console.error(err);
+      } finally {
+        if (showLoading) setLoading(false);
+      }
+    },
+    [id]
+  );
 
   useEffect(() => {
-    fetchLogs(true);
-  }, [id]);
+    const timer = setTimeout(() => {
+      fetchLogs(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchLogs]);
 
   const filteredLogs = useMemo(() => {
     return allLogs.filter((entry) => {
-      const matchesSearch =
-        !searchQuery.trim() ||
-        entry.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        entry.actor.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = !searchQuery.trim() || entry.message.toLowerCase().includes(searchQuery.toLowerCase()) || entry.actor.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLevel = levelFilter === "all" || entry.level === levelFilter;
       const matchesCategory = categoryFilter === "all" || entry.category === categoryFilter;
       return matchesSearch && matchesLevel && matchesCategory;
@@ -117,7 +121,7 @@ export function ServerActivityLogTab({ id }: { id: string }) {
   const startIndex = (currentPage - 1) * PAGE_SIZE;
 
   return (
-    <div className="flex h-full animate-in flex-col gap-4 duration-300 fade-in select-none">
+    <div className="flex h-full animate-in flex-col gap-4 duration-300 select-none fade-in">
       {/* Summary pills */}
       <div className="grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
         {(["error", "warning", "success", "info"] as ActivityLevel[]).map((lvl) => {
@@ -290,7 +294,7 @@ export function ServerActivityLogTab({ id }: { id: string }) {
 
         {/* Pagination Controls */}
         {!loading && (
-          <div className="mt-auto border-t border-border/80 px-4 py-3 flex shrink-0 items-center justify-between font-mono text-xs text-muted-foreground select-none">
+          <div className="mt-auto flex shrink-0 items-center justify-between border-t border-border/80 px-4 py-3 font-mono text-xs text-muted-foreground select-none">
             <span>
               Showing {filteredLogs.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + PAGE_SIZE, filteredLogs.length)} of {filteredLogs.length} events
             </span>

@@ -36,12 +36,12 @@ export const authService = {
     return response.data.data;
   },
 
-  signup: async (data: any): Promise<any> => {
+  signup: async (data: unknown): Promise<unknown> => {
     const response = await apiClient.post("/api/auth/v1/signup", data);
     return response.data;
   },
 
-  login: async (data: any): Promise<AuthResponse> => {
+  login: async (data: unknown): Promise<AuthResponse> => {
     const response = await apiClient.post<AuthResponse>("/api/auth/v1/login", data);
     const token = response.data.data?.tokens?.accessToken;
     if (token) {
@@ -55,7 +55,7 @@ export const authService = {
     return response.data.data;
   },
 
-  logout: async (): Promise<any> => {
+  logout: async (): Promise<unknown> => {
     const response = await apiClient.post("/api/auth/v1/logout");
     setAccessToken(null);
     return response.data;
@@ -78,13 +78,13 @@ export function useOnboardingStatus() {
 
 export function useSignup() {
   return useMutation({
-    mutationFn: (signupData: any) => authService.signup(signupData),
+    mutationFn: (signupData: unknown) => authService.signup(signupData),
   });
 }
 
 export function useLogin() {
   return useMutation({
-    mutationFn: (loginData: any) => authService.login(loginData),
+    mutationFn: (loginData: unknown) => authService.login(loginData),
   });
 }
 

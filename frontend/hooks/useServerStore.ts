@@ -18,6 +18,7 @@ interface ServerState {
   addServer: (server: Omit<ServerAPIResponse, "id" | "status" | "metrics" | "createdAt" | "updatedAt" | "currentPlayers">) => void;
   deleteServer: (id: string) => void;
   updateServer: (id: string, updates: Partial<ServerAPIResponse>) => void;
+  syncServer: (server: ServerAPIResponse) => void;
   addLog: (serverId: string, log: string) => void;
   clearLogs: (serverId: string) => void;
   tickMetrics: () => void;
@@ -52,6 +53,27 @@ export const useServerStore = create<ServerState>((set, get) => {
       });
     },
 
+    syncServer: (server) => {
+      const currentLogs = get().logs;
+      const newLogs = { ...currentLogs };
+      let logsUpdated = false;
+
+      if (!newLogs[server.id]) {
+        newLogs[server.id] = generateInitialLogs(server);
+        logsUpdated = true;
+      }
+
+      set((state) => {
+        const exists = state.servers.some((s) => s.id === server.id);
+        const nextServers = exists ? state.servers.map((s) => (s.id === server.id ? server : s)) : [...state.servers, server];
+
+        return {
+          servers: nextServers,
+          logs: logsUpdated ? newLogs : state.logs,
+        };
+      });
+    },
+
     selectServer: (id) => set({ selectedServerId: id }),
 
     startServer: (id) => {
@@ -65,10 +87,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: "starting",
-              metrics: { ...s.metrics, cpuUsage: 85, ramUsage: Math.floor(s.ramLimit * 0.2) },
-            }
+                ...s,
+                status: "starting",
+                metrics: { ...s.metrics, cpuUsage: 85, ramUsage: Math.floor(s.ramLimit * 0.2) },
+              }
             : s
         ),
       }));
@@ -86,10 +108,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: "stopping",
-              metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
-            }
+                ...s,
+                status: "stopping",
+                metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
+              }
             : s
         ),
       }));
@@ -107,10 +129,10 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: "stopping",
-              metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
-            }
+                ...s,
+                status: "stopping",
+                metrics: { ...s.metrics, cpuUsage: 45, uptime: 0 },
+              }
             : s
         ),
       }));
@@ -123,11 +145,11 @@ export const useServerStore = create<ServerState>((set, get) => {
         servers: state.servers.map((s) =>
           s.id === id
             ? {
-              ...s,
-              status: "offline",
-              currentPlayers: 0,
-              metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
-            }
+                ...s,
+                status: "offline",
+                currentPlayers: 0,
+                metrics: { cpuUsage: 0, ramUsage: 0, uptime: 0 },
+              }
             : s
         ),
       }));
@@ -136,6 +158,7 @@ export const useServerStore = create<ServerState>((set, get) => {
 
     addServer: (newServerData) => {
       // Handled directly via React Query mutation
+      console.log(newServerData);
     },
 
     deleteServer: (id) => {
