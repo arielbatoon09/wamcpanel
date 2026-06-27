@@ -2,6 +2,8 @@ import { LoginForm } from "@/components/features/auth/login-form";
 import { getOnboardingStatus } from "@/lib/auth-status";
 import { redirect } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Sign In — WAMCPanel",
   description: "Sign in to your WAMCPanel account.",
