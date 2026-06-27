@@ -193,7 +193,7 @@ export class ServerMetricsWorker {
             }
           }
         } catch (inspectErr: any) {
-          // Container inspect failed -> container probably doesn't exist
+          // Container inspect failed -> container doesn't exist
           if (server.status !== ServerStatus.OFFLINE && server.status !== ServerStatus.STARTING && server.status !== ServerStatus.STOPPING) {
             await this.prisma.server.update({
               where: { id: server.id },
@@ -206,7 +206,9 @@ export class ServerMetricsWorker {
               },
             });
           }
-          console.log(inspectErr);
+          if (inspectErr.statusCode !== 404 && inspectErr.reason !== "no such container") {
+            console.error(`Error inspecting container for server ${server.name}:`, inspectErr);
+          }
         }
       }
     } catch (err) {
