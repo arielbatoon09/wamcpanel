@@ -1,21 +1,95 @@
-# WAMCPanel (Minecraft Server Panel)
+# WAMCPanel — Web-based Minecraft Control Panel
 
-WAMCPanel (Web-based Minecraft Control Panel) is a modern, state-of-the-art server administration dashboard. It allows you to host, manage, monitor, and configure multiple Minecraft server instances dynamically via Docker containers. Built with Next.js, Express, Prisma, and Dockerode.
+WAMCPanel is a modern, premium, state-of-the-art server administration dashboard. It allows you to host, manage, monitor, and configure multiple Minecraft server instances dynamically via Docker containers. Built with **Next.js 15, Express, TypeScript, Prisma, and Dockerode**.
 
-## Core Features
-* **Multi-Instance Deployment**: Easily spin up and delete Minecraft servers running different software engines (Vanilla, Paper, Fabric, Velocity, etc.) and versions.
-* **Real-time Performance Indicators**: Live CPU, RAM, and disk storage consumption monitors for the host VPS and each individual game container.
-* **Dynamic Active Players tracking**: Real-time connected players lists complete with ping metrics and operator status.
-* **Resource Controls**: In-browser interactive console, terminal logs streams, SFTP access details, and power buttons (Start, Stop, Restart, Kill).
-* **Backup Management**: Create, view, and restore zipped server backups directly from the web interface.
-* **Plugin Installer**: View, toggle, and upload plugins dynamically for Paper/Spigot instances.
-* **Safe Confirmations**: Double-verification checks before critical actions (such as typing the server's name to delete it) to prevent accidental data loss.
+![WAMCPanel Dashboard Preview](images/server-list.png)
 
 ---
 
-## 🚀 Production VPS Deployment (For Normal Users)
+## 📸 Screenshots Gallery
 
-To deploy WAMCPanel on any VPS (Ubuntu/Debian) automatically:
+<details>
+<summary><b>🖥️ Server Dashboard & Overview</b></summary>
+<br>
+
+#### Server Dashboard / List View
+![Server List](images/server-list.png)
+
+#### Server Instance Overview & Node Stats
+![Server Overview](images/server-overview.png)
+</details>
+
+<details>
+<summary><b>🎮 Server Console & Controls</b></summary>
+<br>
+
+#### In-browser Interactive Console & Real-time Log Streaming
+![Server Console](images/server-console.png)
+</details>
+
+<details>
+<summary><b>📁 File Manager & Configuration</b></summary>
+<br>
+
+#### Web File Explorer (Upload, Edit, Compress, Extract)
+![Server File Manager](images/server-file-manager.png)
+</details>
+
+<details>
+<summary><b>🔌 Plugins & Player Management</b></summary>
+<br>
+
+#### Easy Plugins Search & Toggle Installer
+![Server Plugins](images/server-plugins.png)
+
+#### Active Players tracking (Ping & OP status)
+![Server Players List](images/server-players-list.png)
+</details>
+
+<details>
+<summary><b>💾 Backups, Settings & System Logs</b></summary>
+<br>
+
+#### Backup Creation & Restoration Manager
+![Server Backups](images/server-backups.png)
+
+#### Detailed Server Properties Editor
+![Server Settings](images/server-settings.png)
+
+#### Security & Audit Activity Logs
+![Server Activity Logs](images/server-activity-logs.png)
+
+#### Multi-step Server Deployment Wizard
+![Create Server Wizard](images/create-server.png)
+</details>
+
+---
+
+## ✨ Core Features
+
+*   **⚡ Multi-Instance Deployment**: Spin up, configure, and delete Minecraft servers running different software engines (Vanilla, Paper, Fabric, Velocity, etc.) and versions.
+*   **📊 Real-time Performance Indicators**: Live CPU, RAM, and disk storage consumption monitors for the host VPS and each individual game container.
+*   **👥 Active Players Tracking**: Real-time connected players lists complete with ping metrics and operator status.
+*   **🐚 Interactive Console**: In-browser interactive console, terminal logs streams, SFTP access details, and power buttons (Start, Stop, Restart, Kill).
+*   **📂 Full File Explorer**: In-browser directory explorer for editing files, uploading, zipping, and extracting zip files.
+*   **🔌 Plugin Installer**: View, toggle, and upload plugins dynamically for Paper/Spigot instances.
+*   **💾 Backup Management**: Create, download, and restore zipped server backups directly from the web interface.
+*   **🛡️ Activity Logs**: Audit history for user actions to keep track of panel activities.
+
+---
+
+## 🛠️ Technology Stack
+
+*   **Frontend**: Next.js 15 (App Router), TypeScript, TailwindCSS, Lucide Icons, Shadcn/UI
+*   **Backend**: Node.js, Express, TypeScript, Socket.io (Real-time logs & console)
+*   **Database & ORM**: PostgreSQL, Redis, Prisma ORM
+*   **Containers Management**: Docker & Dockerode API
+
+---
+
+## 🚀 Production VPS Deployment (For Users)
+
+To deploy WAMCPanel on any Linux VPS (Ubuntu/Debian) automatically:
 
 ### 1. Initialize the Environment
 Run our automated bootstrap script on your hosting server to install Docker, Node.js, Git, and configure group permissions:
@@ -24,7 +98,7 @@ Run our automated bootstrap script on your hosting server to install Docker, Nod
 curl -fsSL https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/scripts/installation.sh | sudo bash
 ```
 
-### 2. Configure Environment variables
+### 2. Configure Environment Variables
 Open the auto-created `.env` file in the root directory:
 ```bash
 cd /opt/wamcpanel
@@ -51,9 +125,9 @@ The panel dashboard will now be accessible at `http://your-vps-ip:3000`.
 To run and contribute to the WAMCPanel repository locally:
 
 ### Prerequisites
-* **Docker Desktop** running and configured.
-* **Node.js** (v20 LTS recommended).
-* **Git**.
+*   **Docker Desktop** running and configured.
+*   **Node.js** (v20 LTS recommended).
+*   **Git**.
 
 ### 1. Clone & Install Dependencies
 Clone the repository to your local machine:
@@ -67,12 +141,12 @@ Install dependencies individually for the backend and frontend:
 cd backend && npm install
 
 # Frontend dependencies
-cd frontend && npm install
+cd ../frontend && npm install
 ```
 
-### 2. Configure Environment variables
+### 2. Configure Environment Variables
 Rename the backend environment template and customize it:
-* **Backend**: Rename `backend/.env.example` to `backend/.env` (no environment file is needed for the frontend).
+*   **Backend**: Rename `backend/.env.example` to `backend/.env` (no environment file is needed for the frontend).
 
 ### 3. Initialize Database & Prisma
 Under `/backend`, generate the Prisma client and run the database migrations:
@@ -84,16 +158,16 @@ npx prisma migrate dev --name init
 
 ### 4. Run Development Servers
 Start the dev servers by running `npm run dev` in their respective folders:
-* **Backend Web server**:
-  ```bash
-  cd backend && npm run dev
-  ```
-  *(Runs on `http://localhost:8000`)*
-* **Frontend Hot Reload**:
-  ```bash
-  cd frontend && npm run dev
-  ```
-  *(Runs on `http://localhost:3000`)*
+*   **Backend Web server**:
+    ```bash
+    cd backend && npm run dev
+    ```
+    *(Runs on `http://localhost:8000`)*
+*   **Frontend Hot Reload**:
+    ```bash
+    cd frontend && npm run dev
+    ```
+    *(Runs on `http://localhost:3000`)*
 
 ---
 
@@ -101,16 +175,22 @@ Start the dev servers by running `npm run dev` in their respective folders:
 
 We welcome contributions to WAMCPanel! To submit changes:
 
-1. **Fork** the repository and create your feature branch:
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-2. **Commit** your changes following standard guidelines:
-   ```bash
-   git commit -m "feat: add amazing feature details"
-   ```
-3. **Push** to the branch:
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-4. Open a **Pull Request** explaining your implementation details.
+1.  **Fork** the repository and create your feature branch:
+    ```bash
+    git checkout -b feature/amazing-feature
+    ```
+2.  **Commit** your changes following standard guidelines:
+    ```bash
+    git commit -m "feat: add amazing feature details"
+    ```
+3.  **Push** to the branch:
+    ```bash
+    git push origin feature/amazing-feature
+    ```
+4.  Open a **Pull Request** explaining your implementation details.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
