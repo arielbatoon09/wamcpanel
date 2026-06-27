@@ -64,6 +64,10 @@ export function ServerOverviewTab({ id }: { id: string }) {
   const sftpHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
   const sftpPort = "2022";
 
+  const displayHost = (server.host === "localhost" || server.host === "127.0.0.1") && typeof window !== "undefined"
+    ? window.location.hostname
+    : server.host;
+
   return (
     <div className="grid h-auto animate-in grid-cols-1 gap-6 duration-300 fade-in lg:h-full lg:grid-cols-3">
       <Card className="flex h-auto flex-col border border-border/80 bg-card/65 p-5 lg:col-span-2 lg:h-full">
@@ -74,15 +78,15 @@ export function ServerOverviewTab({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
               <div className="group relative rounded-lg border border-border/40 bg-secondary/30 p-2.5 text-right">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Server Connection (IP:Port)</span>
-                <span className="block truncate pl-6 pr-1 font-bold text-foreground">
-                  {server.host}:{server.port}
+                <span className="block truncate pr-6 font-bold text-foreground">
+                  {displayHost}:{server.port}
                 </span>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`${server.host}:${server.port}`);
+                    navigator.clipboard.writeText(`${displayHost}:${server.port}`);
                     toast.success("Server address copied to clipboard!");
                   }}
-                  className="absolute top-1/2 left-2 -translate-y-1/2 cursor-pointer rounded bg-primary/10 p-1 text-primary opacity-0 transition-all group-hover:opacity-100 hover:bg-primary/20"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer rounded bg-primary/10 p-1 text-primary opacity-0 transition-all group-hover:opacity-100 hover:bg-primary/20"
                   title="Copy IP:Port"
                 >
                   <Copy className="h-3.5 w-3.5" />

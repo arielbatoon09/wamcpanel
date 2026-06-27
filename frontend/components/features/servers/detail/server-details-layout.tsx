@@ -64,6 +64,10 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
   const isStarting = server.status === "starting";
   const isStopping = server.status === "stopping";
 
+  const displayHost = (server.host === "localhost" || server.host === "127.0.0.1") && typeof window !== "undefined"
+    ? window.location.hostname
+    : server.host;
+
   // Quick statistics calculation
   const ramPercent = server.ramLimit > 0 ? (server.metrics.ramUsage / server.ramLimit) * 100 : 0;
   const cpuPercent = server.cpuLimit > 0 ? (server.metrics.cpuUsage / server.cpuLimit) * 100 : 0;
@@ -116,7 +120,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
           <div>
             <h4 className="max-w-[150px] truncate text-xs font-bold text-foreground">{server.name}</h4>
             <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
-              {server.host}:{server.port}
+              {displayHost}:{server.port}
             </p>
           </div>
           <span className="relative mt-1 flex h-2 w-2">
@@ -252,7 +256,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
               <StatusBadge status={server.status} />
             </div>
             <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-              IP: <span className="font-bold text-foreground/80">{server.host}</span> Port: <span className="font-bold text-foreground/80">{server.port}</span>
+              IP: <span className="font-bold text-foreground/80">{displayHost}</span> Port: <span className="font-bold text-foreground/80">{server.port}</span>
             </p>
           </div>
 
