@@ -38,7 +38,9 @@ export function ServerConsoleSection({ id, className }: ServerConsoleSectionProp
 
   // Socket Connection and Logs Streaming
   useEffect(() => {
-    const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const socketUrl = typeof window !== "undefined"
+      ? `${window.location.protocol}//${window.location.hostname}:8000`
+      : "http://localhost:8000";
     const socket = io(socketUrl);
 
     socket.on("connect", () => {

@@ -1,18 +1,16 @@
-import type { Response, CookieOptions } from "express";
-import { envConfig } from "@/config/env";
-
-const isProduction = envConfig.STAGE === "prod";
+import type { Request, Response, CookieOptions } from "express";
 
 interface AuthCookieOptions {
   accessToken?: string;
   refreshToken?: string;
 }
 
-export const setAuthCookies = (res: Response, tokens: AuthCookieOptions) => {
+export const setAuthCookies = (req: Request, res: Response, tokens: AuthCookieOptions) => {
+  const isSecure = req.secure;
   const baseOptions: CookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isSecure,
+    sameSite: isSecure ? "strict" : "lax",
     path: "/",
   };
 
@@ -31,11 +29,12 @@ export const setAuthCookies = (res: Response, tokens: AuthCookieOptions) => {
   }
 };
 
-export const clearAuthCookies = (res: Response) => {
+export const clearAuthCookies = (req: Request, res: Response) => {
+  const isSecure = req.secure;
   const baseOptions: CookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? "strict" : "lax",
+    secure: isSecure,
+    sameSite: isSecure ? "strict" : "lax",
     path: "/",
   };
 

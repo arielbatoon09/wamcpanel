@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BACKEND_URL = typeof window === "undefined" ? process.env.NEXT_INTERNAL_BACKEND_URL || "http://backend:8000" : "";
+const BACKEND_URL = typeof window === "undefined"
+  ? (process.env.NODE_ENV === "production" ? "http://backend:8000" : "http://localhost:8000")
+  : "";
 
 let accessToken: string | null = null;
 
@@ -49,6 +51,12 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         setAccessToken(null);
+        // Call backend logout endpoint to clear httpOnly cookies
+        try {
+          await axios.post(`${BACKEND_URL}/api/auth/v1/logout`, {}, { withCredentials: true });
+        } catch {
+          // Ignore logout failures
+        }
         return Promise.reject(refreshError);
       }
     }

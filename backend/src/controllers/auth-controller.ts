@@ -53,7 +53,7 @@ export class AuthController extends BaseController {
       const useCookies = req.headers["x-use-cookies"] !== "false";
 
       if (useCookies) {
-        setAuthCookies(res, { refreshToken });
+        setAuthCookies(req, res, { refreshToken });
         (result.data as any).tokens = {
           accessToken,
           expiresIn,
@@ -69,21 +69,28 @@ export class AuthController extends BaseController {
     const useCookies = req.headers["x-use-cookies"] !== "false";
     const refreshToken = useCookies ? req.cookies?.refreshToken : req.body?.refreshToken;
 
-    const result = await this.refreshTokenService.execute({ refreshToken });
+    try {
+      const result = await this.refreshTokenService.execute({ refreshToken });
 
-    if (result.data?.tokens) {
-      const { accessToken, refreshToken: newRefreshToken, expiresIn } = result.data.tokens;
+      if (result.data?.tokens) {
+        const { accessToken, refreshToken: newRefreshToken, expiresIn } = result.data.tokens;
 
-      if (useCookies) {
-        setAuthCookies(res, { refreshToken: newRefreshToken });
-        (result.data as any).tokens = {
-          accessToken,
-          expiresIn,
-        };
+        if (useCookies) {
+          setAuthCookies(req, res, { refreshToken: newRefreshToken });
+          (result.data as any).tokens = {
+            accessToken,
+            expiresIn,
+          };
+        }
       }
-    }
 
-    return this.ok(res, result.data, result.message);
+      return this.ok(res, result.data, result.message);
+    } catch (error) {
+      if (useCookies) {
+        clearAuthCookies(req, res);
+      }
+      throw error;
+    }
   }
 
   @AsyncController()
@@ -94,7 +101,7 @@ export class AuthController extends BaseController {
     const result = await this.logoutService.execute({ refreshToken });
 
     if (useCookies) {
-      clearAuthCookies(res);
+      clearAuthCookies(req, res);
     }
 
     return this.ok(res, undefined, result.message);

@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/features/auth/login-form";
-import { getOnboardingStatus, getAuthStatus } from "@/lib/auth-status";
+import { getOnboardingStatus } from "@/lib/auth-status";
 import { redirect } from "next/navigation";
 
 export const metadata = {
@@ -11,11 +11,6 @@ export default async function LoginPage() {
   const { onboarded } = await getOnboardingStatus();
   if (!onboarded) {
     redirect("/onboarding");
-  }
-
-  const { authenticated } = await getAuthStatus();
-  if (authenticated) {
-    redirect("/servers");
   }
 
   return (

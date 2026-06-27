@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const backendUrl = process.env.NODE_ENV === "production" ? "http://backend:8000" : "http://localhost:8000";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   experimental: {
@@ -9,7 +11,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${process.env.NEXT_INTERNAL_BACKEND_URL || "http://backend:8000"}/api/:path*`,
+        destination: `${backendUrl}/api/:path*`,
       },
     ];
   },

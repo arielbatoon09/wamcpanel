@@ -30,12 +30,12 @@ Open the auto-created `.env` file in the root directory:
 cd /opt/wamcpanel
 nano .env
 ```
-Ensure you update the following critical variables for production security and routing:
+Ensure you update the following critical variables for production security:
 *   `JWT_SECRET`: Change this to a secure, random string (e.g. `openssl rand -hex 32`) to sign user sessions.
 *   `DB_PASSWORD`: Set a strong database password to secure your PostgreSQL instance.
-*   `DATABASE_URL`: Update the password section in the connection string to match your `DB_PASSWORD`.
-*   `BACKEND_URL`: Replace `localhost` with your public VPS IP address or domain (e.g., `http://your-server-ip:8000`).
-*   `NEXT_PUBLIC_BACKEND_URL`: Replace `localhost` with your public VPS IP address or domain (e.g., `http://your-server-ip:8000`).
+*   `DATABASE_URL`: Update the password section in the connection string to match your `DB_PASSWORD`. Note that if your password contains special characters (like `@`), they must be percent-encoded (e.g., `@` becomes `%40`).
+
+*(All host, client, and WebSocket routing URLs are automatically resolved at runtime, making the deployment fully zero-config!)*
 
 ### 3. Start WAMCPanel via Docker Compose
 Build and run the entire stack (PostgreSQL, Redis, Backend, and Frontend containers) in detached daemon mode:
@@ -71,9 +71,8 @@ cd frontend && npm install
 ```
 
 ### 2. Configure Environment variables
-Rename the environment templates in both workspace folders and customize them:
-* **Backend**: Rename `backend/.env.example` to `backend/.env`
-* **Frontend**: Rename `frontend/.env.example` to `frontend/.env`
+Rename the backend environment template and customize it:
+* **Backend**: Rename `backend/.env.example` to `backend/.env` (no environment file is needed for the frontend).
 
 ### 3. Initialize Database & Prisma
 Under `/backend`, generate the Prisma client and run the database migrations:
