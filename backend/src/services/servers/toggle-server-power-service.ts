@@ -89,6 +89,13 @@ export class ToggleServerPowerService {
 
             const Env = ["EULA=TRUE", `TYPE=${existing.software.toUpperCase()}`, `ONLINE_MODE=${onlineMode ? "TRUE" : "FALSE"}`, "CREATE_CONSOLE_IN_PIPE=true"];
 
+            if (typeof process.getuid === "function") {
+              Env.push(`UID=${process.getuid()}`);
+            }
+            if (typeof process.getgid === "function") {
+              Env.push(`GID=${process.getgid()}`);
+            }
+
             if (isVelocity) {
               Env.push("VELOCITY_VERSION=latest");
             } else {
