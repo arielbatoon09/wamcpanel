@@ -60,6 +60,11 @@ export const serverService = {
     const response = await apiClient.get<{ data: { builds: number[] } }>(`/api/servers/v1/meta/builds/${version}`);
     return response.data.data.builds;
   },
+
+  getHostSpecs: async (): Promise<any> => {
+    const response = await apiClient.get<{ data: { specs: any } }>("/api/servers/v1/meta/host-specs");
+    return response.data.data.specs;
+  },
 };
 
 // TanStack Query Hooks
@@ -138,5 +143,14 @@ export function usePaperBuilds(version: string) {
     queryFn: () => serverService.getBuilds(version),
     enabled: typeof window !== "undefined" && !!version && version !== "",
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useHostSpecs() {
+  return useQuery({
+    queryKey: ["host-specs"],
+    queryFn: serverService.getHostSpecs,
+    enabled: typeof window !== "undefined",
+    refetchInterval: 10000, // specs don't change often
   });
 }

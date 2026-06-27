@@ -8,4 +8,4 @@ export * from "@/services/servers/minecraft-meta-service";
 export * from "@/services/servers/file-service";
 export * from "@/services/servers/sftp-server-service";
 export * from "@/services/servers/server-metrics-worker";
-
+export * from "@/services/servers/host-specs-service";

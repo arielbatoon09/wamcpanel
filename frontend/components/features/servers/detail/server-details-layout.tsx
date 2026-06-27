@@ -280,7 +280,7 @@ export function ServerDetailsLayout({ children }: ServerDetailsLayoutProps) {
             <div className="min-w-0 flex-1">
               <span className="block font-mono text-[9px] tracking-wider text-muted-foreground uppercase">Memory Allocation</span>
               <span className="mt-0.5 block font-mono text-xs font-bold text-foreground">
-                {isOnline ? `${(server.metrics.ramUsage / 1024).toFixed(1)} GB / ${(server.ramLimit / 1024).toFixed(0)} GB` : `0.0 GB / ${(server.ramLimit / 1024).toFixed(0)} GB`}
+                {isOnline ? `${(server.metrics.ramUsage / 1024).toFixed(1)} GB / ${(server.ramLimit / 1024).toFixed(1)} GB` : `0.0 GB / ${(server.ramLimit / 1024).toFixed(1)} GB`}
               </span>
               <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-border/40">
                 <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${isOnline ? ramPercent : 0}%` }} />

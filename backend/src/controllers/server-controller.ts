@@ -2,7 +2,7 @@ import { injectable, inject } from "tsyringe";
 import type { Request, Response } from "express";
 import { BaseController } from "@/controllers/base-controller";
 import { AsyncController } from "@/lib/decorators";
-import { CreateServerService, ListServersService, GetServerService, UpdateServerService, DeleteServerService, ToggleServerPowerService, MinecraftMetaService } from "@/services/servers";
+import { CreateServerService, ListServersService, GetServerService, UpdateServerService, DeleteServerService, ToggleServerPowerService, MinecraftMetaService, HostSpecsService } from "@/services/servers";
 
 @injectable()
 export class ServerController extends BaseController {
@@ -13,7 +13,8 @@ export class ServerController extends BaseController {
     @inject(UpdateServerService) private readonly updateServerService: UpdateServerService,
     @inject(DeleteServerService) private readonly deleteServerService: DeleteServerService,
     @inject(ToggleServerPowerService) private readonly toggleServerPowerService: ToggleServerPowerService,
-    @inject(MinecraftMetaService) private readonly minecraftMetaService: MinecraftMetaService
+    @inject(MinecraftMetaService) private readonly minecraftMetaService: MinecraftMetaService,
+    @inject(HostSpecsService) private readonly hostSpecsService: HostSpecsService
   ) {
     super();
   }
@@ -105,5 +106,11 @@ export class ServerController extends BaseController {
     const { version } = req.params as { version: string };
     const builds = await this.minecraftMetaService.getPaperBuilds(version);
     return this.ok(res, { builds }, "Paper builds retrieved successfully");
+  }
+
+  @AsyncController()
+  async getHostSpecs(req: Request, res: Response) {
+    const specs = await this.hostSpecsService.getSpecs();
+    return this.ok(res, { specs }, "Host specifications retrieved successfully");
   }
 }

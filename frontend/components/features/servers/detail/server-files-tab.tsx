@@ -753,7 +753,7 @@ export function ServerFilesTab({ id }: { id: string }) {
                             onClick={() => handleFolderClick(file.name)}
                             className="flex items-center gap-2 font-semibold text-foreground/90 hover:text-primary hover:underline cursor-pointer text-left w-full truncate"
                           >
-                            <Folder className="h-4 w-4 text-amber-500 shrink-0" />
+                            <img src="/icons/folder-icon.png" alt="Folder" className="h-4 w-4 shrink-0 object-contain" />
                             <span className="truncate">{file.name}</span>
                           </button>
                         ) : (

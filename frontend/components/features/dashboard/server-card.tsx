@@ -4,10 +4,11 @@ import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/components/common/status-badge";
 import { ServerAPIResponse } from "@/constants/servers";
 import { useServerStore } from "@/hooks/useServerStore";
-import { Play, Square, RotateCw, Terminal, Cpu, HardDrive, Users } from "lucide-react";
+import { Play, Square, RotateCw, Terminal, Cpu, HardDrive, Users, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import { toast } from "sonner";
 
 interface ServerCardProps {
   server: ServerAPIResponse;
@@ -39,11 +40,22 @@ export function ServerCard({ server }: ServerCardProps) {
         {/* Top Info */}
         <div className="p-5">
           <div className="mb-2 flex items-start justify-between gap-2">
-            <div>
+            <div className="relative group/ip">
               <h3 className="text-lg leading-tight font-bold tracking-tight transition-colors duration-200 group-hover:text-primary">{server.name}</h3>
-              <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                {server.host}:{server.port}
-              </p>
+              <div className="mt-0.5 flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
+                <span>{server.host}:{server.port}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(`${server.host}:${server.port}`);
+                    toast.success("Server address copied!");
+                  }}
+                  className="rounded bg-primary/10 p-0.5 hover:bg-primary/20 text-primary cursor-pointer transition-all opacity-0 group-hover/ip:opacity-100"
+                  title="Copy IP:Port"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
+              </div>
             </div>
             <StatusBadge status={server.status} />
           </div>

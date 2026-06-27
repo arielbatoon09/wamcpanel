@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useServerStore } from "@/hooks/useServerStore";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Cpu, HardDrive, Settings, Activity, Users } from "lucide-react";
+import { playerService, PlayerItem } from "@/services/player-service";
 
 interface ServerMetricsSectionProps {
   id: string;
@@ -14,14 +16,42 @@ interface ServerMetricsSectionProps {
 export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSectionProps) {
   const { servers } = useServerStore();
   const server = servers.find((s) => s.id === id);
+  const [onlinePlayers, setOnlinePlayers] = useState<PlayerItem[]>([]);
+
+  const isOnline = server?.status === "online";
+
+  useEffect(() => {
+    if (!isOnline) {
+      setOnlinePlayers([]);
+      return;
+    }
+
+    const fetchPlayers = async () => {
+      try {
+        const data = await playerService.list(id);
+        setOnlinePlayers(data);
+      } catch (err) {
+        console.error("Failed to fetch players in metrics section:", err);
+      }
+    };
+
+    fetchPlayers();
+    const interval = setInterval(fetchPlayers, 5000);
+    return () => clearInterval(interval);
+  }, [id, isOnline]);
 
   if (!server) return null;
 
-  const isOnline = server.status === "online";
   const ramLimitGB = (server.ramLimit / 1024).toFixed(1);
   const ramUsageGB = (server.metrics.ramUsage / 1024).toFixed(1);
   const ramPercent = server.ramLimit > 0 ? (server.metrics.ramUsage / server.ramLimit) * 100 : 0;
   const cpuPercent = server.cpuLimit > 0 ? (server.metrics.cpuUsage / server.cpuLimit) * 100 : 0;
+
+  // Actual Disk Storage calculation (in bytes from API)
+  const diskUsageBytes = server.metrics.diskUsage || 0;
+  const diskUsageGB = (diskUsageBytes / (1024 * 1024 * 1024)).toFixed(3); // Show precise GB
+  const diskLimitGB = 50.0;
+  const diskPercent = Math.min(100, (diskUsageBytes / (diskLimitGB * 1024 * 1024 * 1024)) * 100);
 
   // Format Uptime
   const formatUptime = (seconds: number) => {
@@ -82,9 +112,9 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
               <span className="flex items-center gap-1.5 font-mono font-medium text-muted-foreground uppercase">
                 <HardDrive className="h-3.5 w-3.5" /> Disk Storage
               </span>
-              <span className="font-mono font-bold">{isOnline ? "14.2 GB" : "0.0 GB"} / 50.0 GB</span>
+              <span className="font-mono font-bold">{diskUsageGB} GB / Unmetered</span>
             </div>
-            <Progress value={isOnline ? 28.4 : 0} className="h-2" />
+            <Progress value={diskPercent} className="h-2" />
           </div>
 
           {/* Network and Uptime Grid */}
@@ -125,7 +155,7 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
             </div>
             <div className="flex justify-between py-0.5">
               <span className="text-muted-foreground">Java VM Env</span>
-              <span className="font-semibold text-foreground/90">OpenJDK 17 (64-Bit)</span>
+              <span className="font-semibold text-foreground/90">Java {server.javaVersion || "21"} (64-Bit)</span>
             </div>
           </div>
         </div>
@@ -149,29 +179,21 @@ export function ServerMetricsSection({ id, onViewAllPlayers }: ServerMetricsSect
 
           <div className="mt-2 min-h-[80px] flex-1 space-y-1.5 overflow-y-auto pr-1 font-mono text-[11px]">
             {isOnline ? (
-              <>
-                <div className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-foreground/80">player_one</span>
+              onlinePlayers.length === 0 ? (
+                <div className="py-6 text-center text-[11px] text-muted-foreground italic">No players online.</div>
+              ) : (
+                onlinePlayers.map((player) => (
+                  <div key={player.name} className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span className="font-semibold text-foreground/80 truncate max-w-[120px]">
+                        {player.name.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "")}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground">Ping: {player.ping}</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground">Ping: 42ms</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-foreground/80">redstone_pro</span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">Ping: 18ms</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-border/20 bg-secondary/15 p-2">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                    <span className="font-semibold text-foreground/80">builder2</span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground">Ping: 75ms</span>
-                </div>
-              </>
+                ))
+              )
             ) : (
               <div className="py-6 text-center text-[11px] text-muted-foreground italic">No players online (Server offline)</div>
             )}

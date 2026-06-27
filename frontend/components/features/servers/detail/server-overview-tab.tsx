@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useServer, useUpdateServer } from "@/services/server-service";
+import { useServer, useUpdateServer, useHostSpecs } from "@/services/server-service";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ServerMetricsSection } from "./server-metrics-section";
 import { Spinner } from "@/components/ui/spinner";
 import { activityLogService, ActivityLogEntry } from "@/services/activity-log-service";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 
 function formatRelativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -22,6 +24,7 @@ function formatRelativeTime(iso: string): string {
 export function ServerOverviewTab({ id }: { id: string }) {
   const router = useRouter();
   const { data: server, isLoading } = useServer(id);
+  const { data: specs } = useHostSpecs();
   const updateMutation = useUpdateServer();
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
 
@@ -68,23 +71,33 @@ export function ServerOverviewTab({ id }: { id: string }) {
           <div className="shrink-0">
             <h4 className="mb-2 border-b border-border/40 pb-1 font-mono text-[10px] font-bold tracking-wider text-muted-foreground/80 uppercase">Node & Host Specs</h4>
             <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-              <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
-                <span className="mb-0.5 block text-[9px] text-muted-foreground">Host Hostname</span>
-                <span className="block truncate font-bold text-foreground">{server.host}</span>
-              </div>
-              <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
-                <span className="mb-0.5 block text-[9px] text-muted-foreground">Connection Port</span>
-                <span className="block font-bold text-foreground">{server.port}</span>
+              <div className="relative group rounded-lg border border-border/40 bg-secondary/30 p-2.5">
+                <span className="mb-0.5 block text-[9px] text-muted-foreground">Server Connection (IP:Port)</span>
+                <span className="block truncate font-bold text-foreground pr-6">{server.host}:{server.port}</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${server.host}:${server.port}`);
+                    toast.success("Server address copied to clipboard!");
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded bg-primary/10 p-1 hover:bg-primary/20 text-primary cursor-pointer transition-all opacity-0 group-hover:opacity-100"
+                  title="Copy IP:Port"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
               </div>
               <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
                 <span className="mb-0.5 block text-[9px] text-muted-foreground">Engine Software</span>
-                <span className="block font-bold text-foreground">
+                <span className="block font-bold text-foreground truncate">
                   {server.software} ({server.version})
                 </span>
               </div>
               <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
-                <span className="mb-0.5 block text-[9px] text-muted-foreground">Node Location</span>
-                <span className="block font-bold text-foreground">Local Node</span>
+                <span className="mb-0.5 block text-[9px] text-muted-foreground">Processor</span>
+                <span className="block font-bold text-foreground truncate">{specs?.cpuModel || "Loading..."}</span>
+              </div>
+              <div className="rounded-lg border border-border/40 bg-secondary/30 p-2.5">
+                <span className="mb-0.5 block text-[9px] text-muted-foreground">Operating System</span>
+                <span className="block font-bold text-foreground truncate">{specs?.osType || "Loading..."}</span>
               </div>
             </div>
           </div>

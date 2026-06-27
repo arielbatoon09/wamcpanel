@@ -1,4 +1,5 @@
 import { Server } from "../../generated/prisma/client";
+import { getServerDirectorySize } from "./server-path";
 
 /**
  * Maps a flat Prisma Server record to the API response shape
@@ -10,6 +11,8 @@ import { Server } from "../../generated/prisma/client";
 export function toServerResponse(server: Server) {
   const { cpuUsage, ramUsage, uptime, status, createdAt, updatedAt, ...rest } = server;
 
+  const diskUsage = getServerDirectorySize(server.id);
+
   return {
     ...rest,
     status: status.toLowerCase() as "online" | "offline" | "starting" | "stopping",
@@ -19,6 +22,7 @@ export function toServerResponse(server: Server) {
       cpuUsage,
       ramUsage,
       uptime,
+      diskUsage,
     },
   };
 }

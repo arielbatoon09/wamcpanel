@@ -17,3 +17,30 @@ export function deleteServerDirectory(serverId: string): void {
     fs.rmSync(dirPath, { recursive: true, force: true });
   }
 }
+
+export function getServerDirectorySize(serverId: string): number {
+  const dirPath = path.join(SERVERS_ROOT, serverId);
+  if (!fs.existsSync(dirPath)) return 0;
+
+  let totalSize = 0;
+
+  function calculateSize(directory: string) {
+    try {
+      const files = fs.readdirSync(directory);
+      for (const file of files) {
+        const filePath = path.join(directory, file);
+        const stats = fs.statSync(filePath);
+        if (stats.isDirectory()) {
+          calculateSize(filePath);
+        } else {
+          totalSize += stats.size;
+        }
+      }
+    } catch (err) {
+      // Ignore directories or files we cannot access
+    }
+  }
+
+  calculateSize(dirPath);
+  return totalSize;
+}

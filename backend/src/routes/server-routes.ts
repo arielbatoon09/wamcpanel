@@ -24,6 +24,7 @@ const activityLogController = container.resolve(ActivityLogController);
 router.use(AuthMiddleware.execute);
 
 router.get("/v1", serverController.list);
+router.get("/v1/meta/host-specs", serverController.getHostSpecs);
 router.get("/v1/meta/versions", serverController.getVersions);
 router.get("/v1/meta/builds/:version", serverController.getBuilds);
 router.get("/v1/:id", serverController.get);

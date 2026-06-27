@@ -20,6 +20,7 @@ export interface ServerAPIResponse {
     cpuUsage: number;
     ramUsage: number;
     uptime: number;
+    diskUsage?: number;
   };
   createdAt: string;
   updatedAt: string;

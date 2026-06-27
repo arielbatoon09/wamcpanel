@@ -70,6 +70,57 @@ export class ServerMetricsWorker {
               ramUsage = Math.floor(server.ramLimit * 0.4);
             }
 
+            // Try to get actual JVM memory usage via jcmd
+            let jvmRamUsage = 0;
+            try {
+              const execJcmd = await container.exec({
+                Cmd: ["jcmd", "1", "GC.heap_info"],
+                AttachStdout: true,
+                AttachStderr: true,
+              });
+              const jcmdStream = await execJcmd.start({});
+              const jcmdOutput = await new Promise<string>((resolve, reject) => {
+                let output = "";
+                jcmdStream.on("data", (chunk: Buffer) => {
+                  let text = chunk.toString("utf8");
+                  if (
+                    chunk.length >= 8 &&
+                    (chunk[0] === 1 || chunk[0] === 2) &&
+                    chunk[1] === 0 &&
+                    chunk[2] === 0 &&
+                    chunk[3] === 0
+                  ) {
+                    text = chunk.subarray(8).toString("utf8");
+                  }
+                  output += text;
+                });
+                jcmdStream.on("end", () => resolve(output));
+                jcmdStream.on("error", reject);
+              });
+
+              // Look for "used <digits><unit>" under heap info
+              const usedMatch = jcmdOutput.match(/used\s+(\d+)([KMG])/i);
+              if (usedMatch) {
+                const val = parseInt(usedMatch[1], 10);
+                const unit = usedMatch[2].toUpperCase();
+                if (unit === "K") {
+                  jvmRamUsage = Math.round(val / 1024);
+                } else if (unit === "M") {
+                  jvmRamUsage = val;
+                } else if (unit === "G") {
+                  jvmRamUsage = val * 1024;
+                }
+              } else {
+                console.log(`[Metrics] jcmd Output parsed but no heap match. Raw: ${jcmdOutput.replace(/\n/g, " ")}`);
+              }
+            } catch (err: any) {
+              console.error(`[Metrics] Failed to run jcmd for server ${server.name}:`, err.message || err);
+            }
+
+            if (jvmRamUsage > 0) {
+              ramUsage = jvmRamUsage;
+            }
+
             // Get player count via RCON list command
             // Skip for Velocity (proxy — no RCON) and non-ONLINE servers (prevents connection flood during startup)
             let currentPlayers = 0;
