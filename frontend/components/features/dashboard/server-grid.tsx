@@ -26,13 +26,14 @@ export function ServerGrid({ servers, isLoading }: ServerGridProps) {
   return (
     <AnimatePresence mode="popLayout">
       {servers.length > 0 ? (
-        <motion.div layout className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div key="server-grid" layout className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {servers.map((server) => (
             <ServerCard key={server.id} server={server} />
           ))}
         </motion.div>
       ) : (
         <motion.div
+          key="empty-state"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}

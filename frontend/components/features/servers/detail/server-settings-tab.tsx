@@ -247,7 +247,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                   </Tooltip>
                 </span>
                 <Select value={gameMode} onValueChange={setGameMode}>
-                  <SelectTrigger className="cursor-pointer">
+                  <SelectTrigger className="cursor-pointer w-full">
                     <SelectValue placeholder="Select Game Mode" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +279,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                   </Tooltip>
                 </span>
                 <Select value={difficulty} onValueChange={setDifficulty}>
-                  <SelectTrigger className="cursor-pointer">
+                  <SelectTrigger className="cursor-pointer w-full">
                     <SelectValue placeholder="Select Difficulty" />
                   </SelectTrigger>
                   <SelectContent>
@@ -592,7 +592,7 @@ export function ServerSettingsTab({ id }: { id: string }) {
                     </Tooltip>
                   </span>
                   <Select value={javaVersion} onValueChange={setJavaVersion} disabled={javaLocked}>
-                    <SelectTrigger className={cn("cursor-pointer", javaLocked && "opacity-60 cursor-not-allowed")}>
+                    <SelectTrigger className={cn("cursor-pointer w-full", javaLocked && "opacity-60 cursor-not-allowed")}>
                       <SelectValue placeholder="Java Runtime" />
                     </SelectTrigger>
                     <SelectContent>

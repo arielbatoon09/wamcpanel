@@ -31,7 +31,7 @@ export function ServerCard({ server }: ServerCardProps) {
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} whileHover={{ y: -4 }} transition={{ duration: 0.3 }}>
       <Card
         onClick={() => router.push(`/server/${server.id}`)}
-        className="group relative flex h-[320px] cursor-pointer flex-col justify-between overflow-hidden border border-border/80 bg-card/65 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
+        className="!pb-0 group relative flex h-[320px] cursor-pointer flex-col justify-between overflow-hidden border border-border/80 bg-card/65 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30"
       >
         {/* Glow Header */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />

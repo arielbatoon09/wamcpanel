@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface ServerFiltersBarProps {
   onFiltersChange: (filters: { search: string; status: string; software: string }) => void;
+  children?: React.ReactNode;
 }
 
-export function ServerFiltersBar({ onFiltersChange }: ServerFiltersBarProps) {
+export function ServerFiltersBar({ onFiltersChange, children }: ServerFiltersBarProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [softwareFilter, setSoftwareFilter] = useState("all");
@@ -33,13 +34,13 @@ export function ServerFiltersBar({ onFiltersChange }: ServerFiltersBarProps) {
   };
 
   return (
-    <>
+    <div className="flex w-full flex-col md:flex-row items-center justify-between gap-4">
       <div className="relative w-full md:max-w-sm">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Search servers..." value={search} onChange={(e) => handleSearch(e.target.value)} className="h-10 w-full pl-9" />
       </div>
 
-      <div className="flex w-full flex-wrap items-center gap-3 md:w-auto">
+      <div className="flex w-full flex-wrap items-center gap-3 sm:flex-nowrap md:w-auto md:ml-auto">
         {/* Status Filter */}
         <Select value={statusFilter} onValueChange={handleStatus}>
           <SelectTrigger className="h-10 w-[130px] cursor-pointer">
@@ -102,7 +103,9 @@ export function ServerFiltersBar({ onFiltersChange }: ServerFiltersBarProps) {
             </SelectItem>
           </SelectContent>
         </Select>
+
+        {children}
       </div>
-    </>
+    </div>
   );
 }

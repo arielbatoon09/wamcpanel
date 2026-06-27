@@ -38,14 +38,15 @@ export function ServerListSection() {
   return (
     <div className="space-y-6">
       {/* Toolbar: Filters + Add Server */}
-      <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-border bg-card/40 p-4 backdrop-blur-md md:flex-row">
-        <ServerFiltersBar onFiltersChange={setFilters} />
-        <Button asChild className="ml-auto h-10 cursor-pointer gap-1.5 px-4 font-semibold shadow-xs md:ml-0">
-          <Link href="/servers/create">
-            <Plus className="h-4 w-4" />
-            Add Server
-          </Link>
-        </Button>
+      <div className="rounded-xl border border-border bg-card/40 p-4 backdrop-blur-md">
+        <ServerFiltersBar onFiltersChange={setFilters}>
+          <Button asChild className="h-10 cursor-pointer gap-1.5 px-4 font-semibold shadow-xs">
+            <Link href="/servers/create">
+              <Plus className="h-4 w-4" />
+              Add Server
+            </Link>
+          </Button>
+        </ServerFiltersBar>
       </div>
 
       {/* Server Grid */}
