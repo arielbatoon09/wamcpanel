@@ -62,19 +62,27 @@ export class SftpServerService {
         let targetServerId: string | null = null;
         console.log(authenticatedUser);
         client.on("authentication", ctx => {
+          console.log(`SFTP authentication attempt: method=${ctx.method}, username=${ctx.username}`);
+          if (ctx.method !== "password") {
+            ctx.reject(["password"]);
+            return;
+          }
+
           this.handleAuth(ctx)
             .then(res => {
               if (res) {
+                console.log(`SFTP Authentication successful for user: ${res.user.email}, serverId: ${res.serverId}`);
                 authenticatedUser = res.user;
                 targetServerId = res.serverId;
                 ctx.accept();
               } else {
-                ctx.reject();
+                console.warn(`SFTP Authentication failed for username: ${ctx.username}`);
+                ctx.reject(["password"]);
               }
             })
             .catch(err => {
               console.error("SFTP Auth error:", err);
-              ctx.reject();
+              ctx.reject(["password"]);
             });
         });
 
