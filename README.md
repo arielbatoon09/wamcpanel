@@ -145,9 +145,17 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables & Host Key
 Rename the backend environment template and customize it:
 *   **Backend**: Rename `backend/.env.example` to `backend/.env` (no environment file is needed for the frontend).
+
+#### SFTP Host Key
+The SFTP server requires a host key (`backend/sftp_host_key`). It is automatically generated when you start the server for the first time, but you can also generate it manually or regenerate it at any time:
+```bash
+# Navigate to backend directory and run keygen script
+cd backend
+npm run sftp:keygen
+```
 
 ### 3. Initialize Database & Prisma
 Under `/backend`, generate the Prisma client and run the database migrations:

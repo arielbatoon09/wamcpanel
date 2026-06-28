@@ -100,6 +100,15 @@ if [ -f "$INSTALL_DIR/.env.prod.example" ] && [ ! -f "$INSTALL_DIR/.env" ]; then
   echo "[+] Root environment file created."
 fi
 
+# Pre-create SFTP host key placeholder so Docker mounts it as a file (not a folder)
+if [ ! -f "$INSTALL_DIR/backend/sftp_host_key" ]; then
+  touch "$INSTALL_DIR/backend/sftp_host_key"
+  if [ "$REAL_USER" != "root" ]; then
+    chown "$REAL_USER":"$REAL_USER" "$INSTALL_DIR/backend/sftp_host_key"
+  fi
+  echo "[+] SFTP host key placeholder created."
+fi
+
 echo ""
 echo "========================================="
 echo "       Initialization Complete!         "
