@@ -277,6 +277,11 @@ export class SystemUpdateService {
     const container = await docker.createContainer({
       Image: "alpine:latest",
       name: containerName,
+      Env: [
+        `HOST_PROJECT_DIR=${hostProjectDir}`,
+        `HOST_SERVERS_DIR=${hostProjectDir}/servers`,
+        `HOST_BACKUPS_DIR=${hostProjectDir}/backups`,
+      ],
       Cmd: [
         "sh",
         "-c",
