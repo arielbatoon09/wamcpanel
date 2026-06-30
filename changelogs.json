@@ -1,11 +1,4 @@
 {
-  "1.0.2": {
-    "title": "Test Release",
-    "date": "2026-06-30",
-    "changes": [
-      "This is a test release to verify the in-panel auto-update system."
-    ]
-  },
   "1.0.1": {
     "title": "Local Changelog Feed & UI Enhancements",
     "date": "2026-06-30",

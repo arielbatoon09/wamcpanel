@@ -83,7 +83,8 @@ export class SystemUpdateService {
       Cmd: [
         "sh",
         "-c",
-        `git fetch && \
+        `git config --global --add safe.directory /workspace && \
+         git fetch && \
          echo LOCAL_HASH=$(git rev-parse HEAD) && \
          echo REMOTE_HASH=$(git rev-parse @{u}) && \
          (if git show @{u}:version.json > /dev/null 2>&1; then echo REMOTE_VER=$(git show @{u}:version.json | grep -o '"version": "[^"]*' | cut -d'"' -f4); else echo REMOTE_VER=1.0.0; fi) && \
@@ -187,7 +188,7 @@ export class SystemUpdateService {
       Cmd: [
         "sh",
         "-c",
-        "apk add --no-cache git docker-cli docker-cli-compose && git pull && docker compose up -d --build",
+        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git pull && docker compose up -d --build",
       ],
       HostConfig: {
         Binds: [
