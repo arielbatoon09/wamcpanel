@@ -1,10 +1,24 @@
 import { injectable } from "tsyringe";
 import { docker } from "@/lib/docker";
 import * as path from "path";
+import fs from "fs";
 import os from "os";
 
 @injectable()
 export class SystemUpdateService {
+  public async getLocalChangelog() {
+    const paths = [
+      path.resolve(process.cwd(), "changelogs.json"), // Docker
+      path.resolve(process.cwd(), "../changelogs.json"), // Dev
+    ];
+    for (const p of paths) {
+      try {
+        const content = await fs.promises.readFile(p, "utf8");
+        return JSON.parse(content);
+      } catch { }
+    }
+    return {};
+  }
   private async getHostProjectDir(): Promise<string> {
     // Detect host directory by inspecting ourselves via Docker socket
     try {
@@ -46,6 +60,7 @@ export class SystemUpdateService {
     const container = await docker.createContainer({
       Image: "alpine/git:latest",
       name: containerName,
+      Tty: true, // Enable TTY to get clean text logs without multiplexed binary headers
       Cmd: [
         "sh",
         "-c",

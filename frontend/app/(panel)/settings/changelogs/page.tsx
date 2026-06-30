@@ -13,8 +13,8 @@ export default function ChangelogsPage() {
   useEffect(() => {
     const fetchChangelogs = async () => {
       try {
-        const data = await systemService.checkUpdate();
-        setChangelogs(data.changelogs || {});
+        const data = await systemService.getChangelogs();
+        setChangelogs(data || {});
       } catch (err) {
         console.error("Failed to load changelogs:", err);
       } finally {

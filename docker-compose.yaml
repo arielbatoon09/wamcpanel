@@ -65,6 +65,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./servers:/servers
       - ./backups:/backups
+      - ./changelogs.json:/app/changelogs.json:ro
       - ./backend/sftp_host_key:/app/sftp_host_key
 
     environment:

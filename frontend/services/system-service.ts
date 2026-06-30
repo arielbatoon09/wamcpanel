@@ -27,4 +27,9 @@ export const systemService = {
     const response = await apiClient.post<{ data: { success: boolean; message: string } }>("/api/system/v1/update");
     return response.data.data;
   },
+
+  getChangelogs: async (): Promise<Record<string, ChangelogItem>> => {
+    const response = await apiClient.get<{ data: Record<string, ChangelogItem> }>("/api/system/v1/changelogs");
+    return response.data.data;
+  },
 };

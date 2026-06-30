@@ -11,5 +11,6 @@ router.use(AuthMiddleware.execute);
 
 router.get("/v1/update/check", systemController.check);
 router.post("/v1/update", systemController.update);
+router.get("/v1/changelogs", systemController.changelogs);
 
 export default router;

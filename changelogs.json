@@ -1,4 +1,14 @@
 {
+  "1.0.1": {
+    "title": "Local Changelog Feed & UI Enhancements",
+    "date": "2026-06-30",
+    "changes": [
+      "Added local changelogs.json support with filesystem reading.",
+      "Optimized changelog page loading speed via native GET endpoint.",
+      "Implemented one-time popup modal alerts after version updates.",
+      "Added dedicated Changelog history timeline under profile settings."
+    ]
+  },
   "1.0.0": {
     "title": "Panel Self-Updater & Fixes",
     "date": "2026-06-30",

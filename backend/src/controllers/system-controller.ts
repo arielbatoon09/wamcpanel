@@ -23,4 +23,10 @@ export class SystemController extends BaseController {
     const result = await this.systemUpdateService.triggerUpdate();
     return this.ok(res, result, "Update process triggered successfully");
   }
+
+  @AsyncController()
+  async changelogs(req: Request, res: Response) {
+    const result = await this.systemUpdateService.getLocalChangelog();
+    return this.ok(res, result, "Local changelogs retrieved successfully");
+  }
 }
