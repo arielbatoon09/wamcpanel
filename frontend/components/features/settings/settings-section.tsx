@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Settings, Shield, Mail, Database } from "lucide-react";
-import { UpdatesCard } from "@/components/features/settings/updates-card";
 
 export function SettingsSection() {
   const [panelName, setPanelName] = useState("Server Panel");
@@ -102,8 +101,6 @@ export function SettingsSection() {
             </div>
           </Card>
 
-          {/* System Updates */}
-          <UpdatesCard />
         </div>
       </div>
     </form>

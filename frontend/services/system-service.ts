@@ -15,6 +15,7 @@ export interface CheckUpdateResponse {
   fullCurrentCommit: string;
   fullLatestCommit: string;
   changelogs: Record<string, ChangelogItem>;
+  systemSessionId?: string;
 }
 
 export const systemService = {

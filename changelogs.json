@@ -1,4 +1,14 @@
 {
+  "1.0.2": {
+    "title": "Modal Update Interface & Reliable Restart Verification",
+    "date": "2026-06-30",
+    "changes": [
+      "Moved system updater from settings section to a modern modal popup.",
+      "Added boot session tracking to guarantee update completion alerts only trigger after a successful restart.",
+      "Optimized docker updater script with git checkout cleanup to prevent merge conflicts during pull.",
+      "Prevented typescript compiler errors regarding unknown type assignments."
+    ]
+  },
   "1.0.1": {
     "title": "Local Changelog Feed & UI Enhancements",
     "date": "2026-06-30",

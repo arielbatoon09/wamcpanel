@@ -6,6 +6,8 @@ import os from "os";
 
 @injectable()
 export class SystemUpdateService {
+  private static readonly sessionId = Math.random().toString(36).substring(2, 15);
+
   public async getLocalChangelog() {
     const paths = [
       path.resolve(process.cwd(), "changelogs.json"), // Docker
@@ -108,6 +110,7 @@ export class SystemUpdateService {
         fullCurrentCommit: "local",
         fullLatestCommit: "remote",
         changelogs,
+        systemSessionId: SystemUpdateService.sessionId,
       };
     } catch (e: any) {
       console.error("Failed to check updates via GitHub raw feed:", e);
@@ -120,6 +123,7 @@ export class SystemUpdateService {
         fullCurrentCommit: "local",
         fullLatestCommit: "local",
         changelogs: {},
+        systemSessionId: SystemUpdateService.sessionId,
       };
     }
   }
@@ -155,7 +159,7 @@ export class SystemUpdateService {
       Cmd: [
         "sh",
         "-c",
-        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git pull && docker compose up -d --build",
+        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git checkout . && git pull && docker compose up -d --build",
       ],
       HostConfig: {
         Binds: [
