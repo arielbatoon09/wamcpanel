@@ -106,3 +106,13 @@ model Server {
 
   @@map("tbl_servers")
 }
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("tbl_system_settings")
+}

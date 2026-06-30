@@ -1,12 +1,17 @@
-import { injectable } from "tsyringe";
+import { injectable, inject } from "tsyringe";
 import { docker } from "@/lib/docker";
 import * as path from "path";
 import fs from "fs";
 import os from "os";
+import type { PrismaClient } from "@prisma/client";
 
 @injectable()
 export class SystemUpdateService {
   private static readonly sessionId = Math.random().toString(36).substring(2, 15);
+
+  constructor(
+    @inject("PrismaClient") private readonly prisma: PrismaClient
+  ) { }
 
   public async getLocalChangelog() {
     const paths = [
@@ -69,7 +74,15 @@ export class SystemUpdateService {
 
     try {
       // Fetch remote version from GitHub
-      const versionRes = await fetch(`https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`);
+      const versionRes = await fetch(
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`,
+        {
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
+        }
+      );
       if (!versionRes.ok) {
         throw new Error(`Failed to fetch remote version: ${versionRes.statusText}`);
       }
@@ -77,7 +90,15 @@ export class SystemUpdateService {
       const remoteVer = remoteData.version;
 
       // Fetch remote changelogs from GitHub
-      const changelogsRes = await fetch(`https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json?t=${Date.now()}`);
+      const changelogsRes = await fetch(
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json?t=${Date.now()}`,
+        {
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
+        }
+      );
       let changelogs: any = {};
       if (changelogsRes.ok) {
         try {
@@ -177,5 +198,22 @@ export class SystemUpdateService {
       success: true,
       message: "Update initiated. The panel will pull changes, rebuild, and restart shortly.",
     };
+  }
+
+  public async syncLocalVersionToDatabase() {
+    try {
+      const localVersion = await this.getLocalVersion();
+      await this.prisma.systemSetting.upsert({
+        where: { key: "version" },
+        update: { value: localVersion },
+        create: {
+          key: "version",
+          value: localVersion,
+        },
+      });
+      console.log(`🚀 System version synced to database: v${localVersion}`);
+    } catch (err) {
+      console.error("⚠️ Failed to sync system version to database:", err);
+    }
   }
 }

@@ -1,11 +1,4 @@
 {
-  "1.0.3": {
-    "title": "Updater Verification Run",
-    "date": "2026-06-30",
-    "changes": [
-      "Test version to verify automatic Docker Compose force-recreation and inode refresh."
-    ]
-  },
   "1.0.2": {
     "title": "Modal Update Interface & Reliable Restart Verification",
     "date": "2026-06-30",

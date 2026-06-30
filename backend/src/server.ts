@@ -31,6 +31,11 @@ import { ServerMetricsWorker } from "@/services/servers/server-metrics-worker";
 const metricsWorker = container.resolve(ServerMetricsWorker);
 metricsWorker.start();
 
+// Sync local version to database
+import { SystemUpdateService } from "@/services/system/system-update-service";
+const systemUpdateService = container.resolve(SystemUpdateService);
+systemUpdateService.syncLocalVersionToDatabase();
+
 server.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`Server is running on port ${PORT}`);
 });
