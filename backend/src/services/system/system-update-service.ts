@@ -14,6 +14,23 @@ export class SystemUpdateService {
   ) { }
 
   public async getLocalChangelog() {
+    try {
+      const changelogsRes = await fetch(
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json?t=${Date.now()}`,
+        {
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
+        }
+      );
+      if (changelogsRes.ok) {
+        return await changelogsRes.json();
+      }
+    } catch (err) {
+      console.error("Failed to fetch remote changelogs for page:", err);
+    }
+
     const paths = [
       path.resolve(process.cwd(), "changelogs.json"), // Docker
       path.resolve(process.cwd(), "../changelogs.json"), // Dev
