@@ -39,7 +39,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-xl">{children}</div>
 
       {/* Footer */}
-      <p className="relative z-10 mt-8 text-center font-mono text-[10px] tracking-wide text-muted-foreground/40 uppercase">&copy; {new Date().getFullYear()} WAMCPanel &mdash; All rights reserved</p>
+      <p className="relative z-10 mt-8 text-center font-mono text-[10px] tracking-wide text-muted-foreground/40 uppercase">&copy; {new Date().getFullYear()} WAMCPanel by Ariel Batoon &mdash; All rights reserved</p>
     </div>
   );
 }
