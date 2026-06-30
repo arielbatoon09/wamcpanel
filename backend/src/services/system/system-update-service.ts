@@ -70,7 +70,22 @@ export class SystemUpdateService {
   }
 
   public async checkUpdate() {
-    const localVer = await this.getLocalVersion();
+    let localVer = "1.0.0";
+    try {
+      const versionSetting = await this.prisma.systemSetting.findUnique({
+        where: { key: "version" },
+      });
+      if (versionSetting) {
+        localVer = versionSetting.value;
+      } else {
+        // Initialize version key as 1.0.0 if database is empty
+        await this.prisma.systemSetting.create({
+          data: { key: "version", value: "1.0.0" },
+        });
+      }
+    } catch {
+      // Fallback
+    }
 
     try {
       // Fetch remote version from GitHub
@@ -152,6 +167,37 @@ export class SystemUpdateService {
   public async triggerUpdate() {
     const hostProjectDir = await this.getHostProjectDir();
 
+    // Fetch the target remote version to save to the database before updating
+    let remoteVer = "1.0.0";
+    try {
+      const versionRes = await fetch(
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`,
+        {
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
+        }
+      );
+      if (versionRes.ok) {
+        const remoteData = (await versionRes.json()) as { version: string };
+        remoteVer = remoteData.version;
+      }
+    } catch (err) {
+      console.error("Failed to fetch target remote version before update:", err);
+    }
+
+    // Update database setting to remote version (becomes source of truth after restart)
+    try {
+      await this.prisma.systemSetting.upsert({
+        where: { key: "version" },
+        update: { value: remoteVer },
+        create: { key: "version", value: remoteVer },
+      });
+    } catch (err) {
+      console.error("Failed to update database version settings key:", err);
+    }
+
     // Ensure alpine image is available
     await new Promise<void>((resolve, reject) => {
       docker.pull("alpine:latest", {}, (err, stream) => {
@@ -198,22 +244,5 @@ export class SystemUpdateService {
       success: true,
       message: "Update initiated. The panel will pull changes, rebuild, and restart shortly.",
     };
-  }
-
-  public async syncLocalVersionToDatabase() {
-    try {
-      const localVersion = await this.getLocalVersion();
-      await this.prisma.systemSetting.upsert({
-        where: { key: "version" },
-        update: { value: localVersion },
-        create: {
-          key: "version",
-          value: localVersion,
-        },
-      });
-      console.log(`🚀 System version synced to database: v${localVersion}`);
-    } catch (err) {
-      console.error("⚠️ Failed to sync system version to database:", err);
-    }
   }
 }
