@@ -35,7 +35,11 @@ export class SftpServerService {
   }
 
   private getOrCreateHostKey(): string {
-    const keyPath = path.resolve(process.cwd(), "sftp_host_key");
+    const keyPath = path.resolve(process.cwd(), "../servers/sftp_host_key");
+    const keyDir = path.dirname(keyPath);
+    if (!fs.existsSync(keyDir)){
+      fs.mkdirSync(keyDir, { recursive: true });
+    }
     if (fs.existsSync(keyPath)) {
       const existingKey = fs.readFileSync(keyPath, "utf8").trim();
       if (existingKey) {

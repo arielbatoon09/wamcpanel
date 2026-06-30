@@ -67,7 +67,6 @@ services:
       - ./backups:/backups
       - ./changelogs.json:/app/changelogs.json:ro
       - ./version.json:/app/version.json:ro
-      - ./backend/sftp_host_key:/app/sftp_host_key
 
     environment:
       DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@pg:5432/${DB_NAME:-wamc_db}?schema=public"
