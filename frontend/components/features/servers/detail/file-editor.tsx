@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -22,6 +22,11 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
   const [originalContent, setOriginalContent] = useState("");
   const [showConfirmDiscard, setShowConfirmDiscard] = useState(false);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   const isDirty = content !== originalContent;
 
   const loadFile = useCallback(async () => {
@@ -34,11 +39,11 @@ export function FileEditor({ serverId, filePath, onClose }: FileEditorProps) {
     } catch (err: unknown) {
       const axiosError = err as { response?: { data?: { message?: string } } };
       toast.error(axiosError.response?.data?.message || "Failed to load file content");
-      onClose();
+      onCloseRef.current();
     } finally {
       setLoading(false);
     }
-  }, [serverId, filePath, onClose]);
+  }, [serverId, filePath]);
 
   useEffect(() => {
     if (filePath) {

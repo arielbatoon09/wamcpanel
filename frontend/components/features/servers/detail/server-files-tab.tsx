@@ -19,7 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { File, FileArchive, Trash2, FolderPlus, FilePlus, ChevronRight, Home, UploadCloud, ArrowUp, Archive, Menu } from "lucide-react";
 
 export function ServerFilesTab({ id }: { id: string }) {
-  const { addLog } = useServerStore();
+  const addLog = useServerStore((state) => state.addLog);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -122,17 +122,19 @@ export function ServerFilesTab({ id }: { id: string }) {
     }
   }, [editParam]);
 
+  const handleCloseEditor = useCallback(() => {
+    setEditingFilePath(null);
+    // Remove edit parameter from URL
+    router.replace(pathname);
+    fetchFiles();
+  }, [pathname, router, fetchFiles]);
+
   if (editingFilePath) {
     return (
       <FileEditor
         serverId={id}
         filePath={editingFilePath}
-        onClose={() => {
-          setEditingFilePath(null);
-          // Remove edit parameter from URL
-          router.replace(pathname);
-          fetchFiles();
-        }}
+        onClose={handleCloseEditor}
       />
     );
   }
@@ -498,9 +500,8 @@ export function ServerFilesTab({ id }: { id: string }) {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`relative flex min-h-[500px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 select-none lg:h-full ${
-        isDragging ? "scale-[0.99] border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border/80"
-      }`}
+      className={`relative flex min-h-[500px] animate-in flex-col border bg-card/65 p-5 transition-all duration-200 select-none lg:h-full ${isDragging ? "scale-[0.99] border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border/80"
+        }`}
     >
       {/* File Drag Overlay */}
       {isDragging && (
@@ -711,9 +712,8 @@ export function ServerFilesTab({ id }: { id: string }) {
                                 setEditingFilePath(currentPath ? `${currentPath}/${file.name}` : file.name);
                               }
                             }}
-                            className={`flex w-full items-center gap-2 truncate text-left ${
-                              isZip(file.name) ? "cursor-default text-foreground/80" : "cursor-pointer text-foreground/80 hover:text-primary hover:underline"
-                            }`}
+                            className={`flex w-full items-center gap-2 truncate text-left ${isZip(file.name) ? "cursor-default text-foreground/80" : "cursor-pointer text-foreground/80 hover:text-primary hover:underline"
+                              }`}
                           >
                             {isZip(file.name) ? <FileArchive className="h-4 w-4 shrink-0 text-rose-500" /> : <File className="h-4 w-4 shrink-0 text-muted-foreground" />}
                             <span className="truncate">{file.name}</span>
