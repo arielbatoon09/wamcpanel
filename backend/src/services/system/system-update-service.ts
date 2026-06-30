@@ -159,7 +159,7 @@ export class SystemUpdateService {
       Cmd: [
         "sh",
         "-c",
-        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git checkout . && git pull && docker compose up -d --build",
+        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git checkout . && git pull && docker compose up -d --build --force-recreate",
       ],
       HostConfig: {
         Binds: [
