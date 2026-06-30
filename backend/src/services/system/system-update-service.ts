@@ -69,7 +69,7 @@ export class SystemUpdateService {
 
     try {
       // Fetch remote version from GitHub
-      const versionRes = await fetch("https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json");
+      const versionRes = await fetch(`https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`);
       if (!versionRes.ok) {
         throw new Error(`Failed to fetch remote version: ${versionRes.statusText}`);
       }
@@ -77,7 +77,7 @@ export class SystemUpdateService {
       const remoteVer = remoteData.version;
 
       // Fetch remote changelogs from GitHub
-      const changelogsRes = await fetch("https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json");
+      const changelogsRes = await fetch(`https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json?t=${Date.now()}`);
       let changelogs: any = {};
       if (changelogsRes.ok) {
         try {
