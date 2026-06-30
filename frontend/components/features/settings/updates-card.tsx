@@ -25,7 +25,7 @@ export function UpdatesCard() {
       } else if (!silent && !data.updateAvailable) {
         toast.success("Panel is up to date.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setError("Failed to fetch system update details.");
       if (!silent) {
@@ -38,6 +38,7 @@ export function UpdatesCard() {
 
   // Run on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkUpdates(true);
   }, []);
 
@@ -49,9 +50,10 @@ export function UpdatesCard() {
 
       // Start polling for server restart
       pollServerRestart();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to trigger update.");
+      const axiosError = err as { response?: { data?: { message?: string } } };
+      toast.error(axiosError.response?.data?.message || "Failed to trigger update.");
       setUpdating(false);
     }
   };
@@ -70,7 +72,7 @@ export function UpdatesCard() {
         setTimeout(() => {
           window.location.reload();
         }, 1500);
-      } catch (err) {
+      } catch {
         // Expected failures during container restart
         if (attempts > 60) { // Timeout after 3 minutes
           clearInterval(interval);

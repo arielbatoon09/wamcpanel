@@ -53,7 +53,10 @@ export class SystemUpdateService {
          echo LOCAL_HASH=$(git rev-parse HEAD) && \
          echo REMOTE_HASH=$(git rev-parse origin/main) && \
          (if [ -f version.json ]; then echo LOCAL_VER=$(grep -o '"version": "[^"]*' version.json | cut -d'"' -f4); else echo LOCAL_VER=1.0.0; fi) && \
-         (if git show origin/main:version.json > /dev/null 2>&1; then echo REMOTE_VER=$(git show origin/main:version.json | grep -o '"version": "[^"]*' | cut -d'"' -f4); else echo REMOTE_VER=1.0.0; fi)`,
+         (if git show origin/main:version.json > /dev/null 2>&1; then echo REMOTE_VER=$(git show origin/main:version.json | grep -o '"version": "[^"]*' | cut -d'"' -f4); else echo REMOTE_VER=1.0.0; fi) && \
+         echo CHANGELOG_START && \
+         (cat changelogs.json 2>/dev/null || echo "{}") && \
+         echo CHANGELOG_END`,
       ],
       HostConfig: {
         Binds: [`${hostProjectDir}:/workspace`],
@@ -79,6 +82,17 @@ export class SystemUpdateService {
       const localVer = localVerMatch ? localVerMatch[1] : "1.0.0";
       const remoteVer = remoteVerMatch ? remoteVerMatch[1] : "1.0.0";
 
+      // Parse changelog JSON
+      let changelogs = {};
+      const changelogMatch = logs.match(/CHANGELOG_START\s*([\s\S]*?)\s*CHANGELOG_END/);
+      if (changelogMatch) {
+        try {
+          changelogs = JSON.parse(changelogMatch[1].trim());
+        } catch (e) {
+          console.error("Failed to parse changelogs.json content:", e);
+        }
+      }
+
       const isVersionGreater = (v1: string, v2: string): boolean => {
         const parts1 = v1.split(".").map(Number);
         const parts2 = v2.split(".").map(Number);
@@ -103,10 +117,11 @@ export class SystemUpdateService {
         latestCommit: remoteHash.slice(0, 7),
         fullCurrentCommit: localHash,
         fullLatestCommit: remoteHash,
+        changelogs,
       };
     } finally {
       // Clean up the container
-      await container.remove({ force: true }).catch(() => {});
+      await container.remove({ force: true }).catch(() => { });
     }
   }
 
@@ -127,11 +142,12 @@ export class SystemUpdateService {
 
     const containerName = "wamcpanel-updater";
 
-    // Stop and remove old updater if it exists
     try {
       const oldContainer = docker.getContainer(containerName);
-      await oldContainer.remove({ force: true }).catch(() => {});
-    } catch {}
+      await oldContainer.remove({ force: true }).catch(() => { });
+    } catch {
+      // Ignore error if the container does not exist
+    }
 
     // Create detached container to run the update commands in the background
     const container = await docker.createContainer({

@@ -1,0 +1,12 @@
+{
+  "1.0.0": {
+    "title": "Panel Self-Updater & Fixes",
+    "date": "2026-06-30",
+    "changes": [
+      "Integrated self-updating feature using Docker socket.",
+      "Added local Windows mount path resolution auto-detection.",
+      "Implemented monaco editor callback caching to fix scroll refreshing bugs.",
+      "Added dashboard version and update status badge."
+    ]
+  }
+}

@@ -3,7 +3,8 @@
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/common/logo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, FileText } from "lucide-react";
+import { ChangelogsPopup } from "@/components/features/settings/changelogs-popup";
 import { cn } from "@/lib/utils";
 import { ThemeColorPicker } from "@/components/features/settings/theme-color-picker";
 import { useMe, useOnboardingStatus, useLogout } from "@/services/auth-service";
@@ -84,6 +85,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className={cn("flex flex-col bg-background text-foreground transition-colors duration-150", isServerDetail ? "min-h-screen lg:h-screen lg:overflow-hidden" : "min-h-screen")}>
+      <ChangelogsPopup />
       {/* Top Header / Navigation Bar */}
       <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center border-b border-border bg-card/65 px-6 backdrop-blur-md select-none">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between">
@@ -121,6 +123,9 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push("/settings/profile")} className="cursor-pointer gap-2 text-xs">
                   <User className="h-3.5 w-3.5" /> Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/settings/changelogs")} className="cursor-pointer gap-2 text-xs">
+                  <FileText className="h-3.5 w-3.5" /> Changelogs
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive">

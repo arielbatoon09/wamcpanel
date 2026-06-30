@@ -76,6 +76,8 @@ WAMCPanel is a modern, premium, state-of-the-art server administration dashboard
 *   **🔌 Plugin Installer**: View, toggle, and upload plugins dynamically for Paper/Spigot instances.
 *   **💾 Backup Management**: Create, download, and restore zipped server backups directly from the web interface.
 *   **🛡️ Activity Logs**: Audit history for user actions to keep track of panel activities.
+*   **🔄 One-Click Self-Updater**: Update the panel's code, install dependencies, rebuild, and restart container stacks directly from the admin dashboard.
+*   **📋 Release Notes & Timeline**: In-app version indicator pills, update alerts, auto-popup new changes, and dedicated changelog history pages.
 
 ---
 

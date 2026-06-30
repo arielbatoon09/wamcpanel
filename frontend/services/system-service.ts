@@ -1,5 +1,11 @@
 import { apiClient } from "@/services/api-client";
 
+export interface ChangelogItem {
+  title: string;
+  date: string;
+  changes: string[];
+}
+
 export interface CheckUpdateResponse {
   updateAvailable: boolean;
   currentVersion: string;
@@ -8,6 +14,7 @@ export interface CheckUpdateResponse {
   latestCommit: string;
   fullCurrentCommit: string;
   fullLatestCommit: string;
+  changelogs: Record<string, ChangelogItem>;
 }
 
 export const systemService = {
