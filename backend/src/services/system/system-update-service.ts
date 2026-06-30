@@ -15,7 +15,9 @@ export class SystemUpdateService {
       try {
         const content = await fs.promises.readFile(p, "utf8");
         return JSON.parse(content);
-      } catch { }
+      } catch {
+        // Ignore error if file reading fails
+      }
     }
     return {};
   }
@@ -32,7 +34,9 @@ export class SystemUpdateService {
         if (parsed && parsed.version) {
           return parsed.version;
         }
-      } catch { }
+      } catch {
+        // Ignore error if file reading or parsing fails
+      }
     }
     return "1.0.0";
   }
@@ -59,69 +63,25 @@ export class SystemUpdateService {
   }
 
   public async checkUpdate() {
-    const hostProjectDir = await this.getHostProjectDir();
     const localVer = await this.getLocalVersion();
 
-    // Ensure alpine/git image is available
-    await new Promise<void>((resolve, reject) => {
-      docker.pull("alpine/git:latest", {}, (err, stream) => {
-        if (err) return reject(err);
-        if (!stream) return reject(new Error("No stream returned from docker pull"));
-        docker.modem.followProgress(stream, (followErr) => {
-          if (followErr) reject(followErr);
-          else resolve();
-        });
-      });
-    });
-
-    // Create transient container to check git hashes and version.json
-    const containerName = `wamc-update-check-${Date.now()}`;
-    const container = await docker.createContainer({
-      Image: "alpine/git:latest",
-      name: containerName,
-      Tty: true, // Enable TTY to get clean text logs without multiplexed binary headers
-      Cmd: [
-        "sh",
-        "-c",
-        `git config --global --add safe.directory /workspace && \
-         git fetch && \
-         echo LOCAL_HASH=$(git rev-parse HEAD) && \
-         echo REMOTE_HASH=$(git rev-parse @{u}) && \
-         (if git show @{u}:version.json > /dev/null 2>&1; then echo REMOTE_VER=$(git show @{u}:version.json | grep -o '"version": "[^"]*' | cut -d'"' -f4); else echo REMOTE_VER=1.0.0; fi) && \
-         echo CHANGELOG_START && \
-         (cat changelogs.json 2>/dev/null || echo "{}") && \
-         echo CHANGELOG_END`,
-      ],
-      HostConfig: {
-        Binds: [`${hostProjectDir}:/workspace`],
-      },
-      WorkingDir: "/workspace",
-    });
-
     try {
-      await container.start();
-      await container.wait();
+      // Fetch remote version from GitHub
+      const versionRes = await fetch("https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json");
+      if (!versionRes.ok) {
+        throw new Error(`Failed to fetch remote version: ${versionRes.statusText}`);
+      }
+      const remoteData = (await versionRes.json()) as { version: string };
+      const remoteVer = remoteData.version;
 
-      // Get container stdout/stderr
-      const logsBuffer = await container.logs({ stdout: true, stderr: true });
-      const logs = logsBuffer.toString("utf8");
-
-      const localMatch = logs.match(/LOCAL_HASH=([a-f0-9]+)/);
-      const remoteMatch = logs.match(/REMOTE_HASH=([a-f0-9]+)/);
-      const remoteVerMatch = logs.match(/REMOTE_VER=([^\s\r\n]+)/);
-
-      const localHash = localMatch ? localMatch[1] : "unknown";
-      const remoteHash = remoteMatch ? remoteMatch[1] : "unknown";
-      const remoteVer = remoteVerMatch ? remoteVerMatch[1] : "1.0.0";
-
-      // Parse changelog JSON
-      let changelogs = {};
-      const changelogMatch = logs.match(/CHANGELOG_START\s*([\s\S]*?)\s*CHANGELOG_END/);
-      if (changelogMatch) {
+      // Fetch remote changelogs from GitHub
+      const changelogsRes = await fetch("https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json");
+      let changelogs: any = {};
+      if (changelogsRes.ok) {
         try {
-          changelogs = JSON.parse(changelogMatch[1].trim());
-        } catch (e) {
-          console.error("Failed to parse changelogs.json content:", e);
+          changelogs = await changelogsRes.json();
+        } catch {
+          // Ignore JSON parsing errors for remote changelogs
         }
       }
 
@@ -137,23 +97,30 @@ export class SystemUpdateService {
         return false;
       };
 
-      const updateAvailable =
-        isVersionGreater(remoteVer, localVer) ||
-        (localVer === remoteVer && localHash !== remoteHash && localHash !== "unknown" && remoteHash !== "unknown");
+      const updateAvailable = isVersionGreater(remoteVer, localVer);
 
       return {
         updateAvailable,
         currentVersion: localVer,
         latestVersion: remoteVer,
-        currentCommit: localHash.slice(0, 7),
-        latestCommit: remoteHash.slice(0, 7),
-        fullCurrentCommit: localHash,
-        fullLatestCommit: remoteHash,
+        currentCommit: "local",
+        latestCommit: "remote",
+        fullCurrentCommit: "local",
+        fullLatestCommit: "remote",
         changelogs,
       };
-    } finally {
-      // Clean up the container
-      await container.remove({ force: true }).catch(() => { });
+    } catch (e: any) {
+      console.error("Failed to check updates via GitHub raw feed:", e);
+      return {
+        updateAvailable: false,
+        currentVersion: localVer,
+        latestVersion: localVer,
+        currentCommit: "local",
+        latestCommit: "local",
+        fullCurrentCommit: "local",
+        fullLatestCommit: "local",
+        changelogs: {},
+      };
     }
   }
 
