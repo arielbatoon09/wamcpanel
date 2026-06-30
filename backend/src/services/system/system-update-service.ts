@@ -105,9 +105,28 @@ export class SystemUpdateService {
     }
 
     try {
-      // Fetch remote version from GitHub
+      // Fetch latest commit SHA from GitHub API to bypass CDN caching
+      let latestSha = "master";
+      try {
+        const commitRes = await fetch(
+          "https://api.github.com/repos/arielbatoon09/wamcpanel/commits/master",
+          {
+            headers: {
+              "User-Agent": "WAMCPanel-Updater"
+            }
+          }
+        );
+        if (commitRes.ok) {
+          const commitData = (await commitRes.json()) as { sha: string };
+          latestSha = commitData.sha || "master";
+        }
+      } catch (err) {
+        console.error("Failed to fetch latest commit SHA from GitHub API:", err);
+      }
+
+      // Fetch remote version using the unique commit SHA path (bypasses CDN cache)
       const versionRes = await fetch(
-        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`,
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/${latestSha}/version.json`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -121,9 +140,9 @@ export class SystemUpdateService {
       const remoteData = (await versionRes.json()) as { version: string };
       const remoteVer = remoteData.version;
 
-      // Fetch remote changelogs from GitHub
+      // Fetch remote changelogs using the unique commit SHA path
       const changelogsRes = await fetch(
-        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/changelogs.json?t=${Date.now()}`,
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/${latestSha}/changelogs.json`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -187,8 +206,26 @@ export class SystemUpdateService {
     // Fetch the target remote version to save to the database before updating
     let remoteVer = "1.0.0";
     try {
+      let latestSha = "master";
+      try {
+        const commitRes = await fetch(
+          "https://api.github.com/repos/arielbatoon09/wamcpanel/commits/master",
+          {
+            headers: {
+              "User-Agent": "WAMCPanel-Updater"
+            }
+          }
+        );
+        if (commitRes.ok) {
+          const commitData = (await commitRes.json()) as { sha: string };
+          latestSha = commitData.sha || "master";
+        }
+      } catch (err) {
+        console.error("Failed to fetch latest commit SHA in triggerUpdate:", err);
+      }
+
       const versionRes = await fetch(
-        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/master/version.json?t=${Date.now()}`,
+        `https://raw.githubusercontent.com/arielbatoon09/wamcpanel/${latestSha}/version.json`,
         {
           headers: {
             "Cache-Control": "no-cache",
@@ -243,7 +280,7 @@ export class SystemUpdateService {
       Cmd: [
         "sh",
         "-c",
-        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git checkout . && git pull && docker compose up -d --build --force-recreate",
+        "apk add --no-cache git docker-cli docker-cli-compose && git config --global --add safe.directory /workspace && git checkout . && git pull && docker compose up -d --build --force-recreate backend frontend",
       ],
       HostConfig: {
         Binds: [
