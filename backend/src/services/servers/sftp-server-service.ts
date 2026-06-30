@@ -37,7 +37,10 @@ export class SftpServerService {
   private getOrCreateHostKey(): string {
     const keyPath = path.resolve(process.cwd(), "sftp_host_key");
     if (fs.existsSync(keyPath)) {
-      return fs.readFileSync(keyPath, "utf8");
+      const existingKey = fs.readFileSync(keyPath, "utf8").trim();
+      if (existingKey) {
+        return existingKey;
+      }
     }
     const { privateKey } = crypto.generateKeyPairSync("rsa", {
       modulusLength: 2048,

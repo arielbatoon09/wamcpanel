@@ -41,6 +41,8 @@
 
 .env
 
+/backend/sftp_host_key
+
 # BACKEND
 # Dependency directories
 /backend/node_modules/

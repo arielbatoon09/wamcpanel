@@ -81,7 +81,7 @@ WAMCPanel is a modern, premium, state-of-the-art server administration dashboard
 
 ## 🛠️ Technology Stack
 
-*   **Frontend**: Next.js 15 (App Router), TypeScript, TailwindCSS, Lucide Icons, Shadcn/UI
+*   **Frontend**: Next.js 16, TypeScript, TailwindCSS, Lucide Icons, Shadcn/UI, Zustand
 *   **Backend**: Node.js, Express, TypeScript, Socket.io (Real-time logs & console)
 *   **Database & ORM**: PostgreSQL, Redis, Prisma ORM
 *   **Containers Management**: Docker & Dockerode API
@@ -127,7 +127,7 @@ To run and contribute to the WAMCPanel repository locally:
 
 ### Prerequisites
 *   **Docker Desktop** running and configured.
-*   **Node.js** (v20 LTS recommended).
+*   **Node.js** (v22 LTS recommended).
 *   **Git**.
 
 ### 1. Clone & Install Dependencies
@@ -145,9 +145,17 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Configure Environment Variables
+### 2. Configure Environment Variables & Host Key
 Rename the backend environment template and customize it:
 *   **Backend**: Rename `backend/.env.example` to `backend/.env` (no environment file is needed for the frontend).
+
+#### SFTP Host Key
+The SFTP server requires a host key (`backend/sftp_host_key`). It is automatically generated when you start the server for the first time, but you can also generate it manually or regenerate it at any time:
+```bash
+# Navigate to backend directory and run keygen script
+cd backend
+npm run sftp:keygen
+```
 
 ### 3. Initialize Database & Prisma
 Under `/backend`, generate the Prisma client and run the database migrations:
